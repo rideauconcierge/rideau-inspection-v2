@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Rideau — Inspection Reports</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0b1826; --navy:#132a3e; --navy-light:#1c3a53; --navy-card:#17324a;
+    --gold:#c9a04a; --gold-bright:#e0bc6b;
+    --text:#eae6dc; --text-muted:#8fa1b3;
+    --ok:#5c9c7c; --ok-bg:rgba(92,156,124,0.16);
+    --warn:#c96a52; --warn-bg:rgba(201,106,82,0.16);
+    --pre-color:#c9a04a; --post-color:#5c8ea3;
+    --border:rgba(201,160,74,0.22); --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--navy-deep);
+    background-image:radial-gradient(circle at 15% 0%, rgba(201,160,74,0.06), transparent 45%),
+                      radial-gradient(circle at 90% 10%, rgba(201,160,74,0.04), transparent 40%);
+    color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+  .hidden{display:none !important;}
+
+  /* ---- LOGIN GATE ---- */
+  #login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:var(--navy-deep);
+    background-image:radial-gradient(circle at 50% 30%, rgba(201,160,74,0.10), transparent 55%);
+    z-index:100;}
+  .login-card{text-align:center;padding:40px 36px;background:var(--navy-card);border:1px solid var(--border);
+    border-radius:14px;max-width:340px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+  .login-lock{font-size:34px;margin-bottom:10px;}
+  .login-card h1{font-family:'Fraunces',serif;font-size:22px;margin:0 0 4px;}
+  .login-card .ls{color:var(--text-muted);font-size:12px;margin-bottom:22px;}
+  .login-card input{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);
+    padding:12px 14px;border-radius:8px;font-size:15px;text-align:center;letter-spacing:0.2em;margin-bottom:14px;}
+  .login-card input:focus{outline:none;border-color:var(--gold);}
+  .login-btn{width:100%;background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);
+    border:none;padding:13px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .login-btn:hover{filter:brightness(1.08);}
+  .login-error{color:var(--warn);font-size:12px;margin-top:10px;min-height:16px;}
+  .shake{animation:shake .35s;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+
+  /* ---- MAIN APP ---- */
+  #main-app{max-width:1100px;margin:0 auto;padding:22px 16px 70px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;
+    border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:20px;}
+  .eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:4px;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:24px;margin:0;}
+  .clock{text-align:right;color:var(--text-muted);font-size:12px;}
+  .clock .time{font-family:'Fraunces',serif;color:var(--gold-bright);font-size:16px;}
+
+  /* filter tabs */
+  .tab-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .tab{background:var(--navy-card);border:1px solid var(--border);color:var(--text-muted);
+    padding:7px 16px;border-radius:20px;font-size:12.5px;cursor:pointer;transition:all .12s;}
+  .tab:hover{border-color:var(--gold);}
+  .tab.active{background:var(--gold);border-color:var(--gold);color:var(--navy-deep);font-weight:600;}
+
+  .filter-panel{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+  .filter-panel select, .filter-panel input{background:var(--navy);border:1px solid var(--border);color:var(--text);
+    padding:8px 12px;border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;}
+  .filter-panel select:focus, .filter-panel input:focus{outline:none;border-color:var(--gold);}
+  .clear-btn{background:none;border:1px solid var(--border);color:var(--text-muted);padding:8px 14px;
+    border-radius:7px;font-size:12px;cursor:pointer;}
+  .clear-btn:hover{border-color:var(--warn);color:var(--warn);}
+
+  .result-meta{color:var(--text-muted);font-size:12px;margin-bottom:14px;}
+  .result-meta b{color:var(--gold-bright);}
+
+  /* card grid */
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;}
+  .rcard{background:var(--navy-card);border:1px solid var(--border);border-left:4px solid var(--gold);
+    border-radius:var(--radius);padding:15px 16px;cursor:pointer;transition:transform .12s,border-color .12s;}
+  .rcard:hover{transform:translateY(-2px);border-color:var(--gold);}
+  .rcard.post-mode{border-left-color:var(--post-color);}
+  .rcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+  .rcard-room{font-family:'Fraunces',serif;font-size:15.5px;font-weight:600;}
+  .mode-badge{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:10px;font-weight:700;}
+  .mode-badge.pre{background:rgba(201,160,74,0.18);color:var(--gold-bright);}
+  .mode-badge.post{background:rgba(92,142,163,0.2);color:#8bb8cf;}
+  .rcard-meta{font-size:12px;color:var(--text-muted);line-height:1.7;}
+  .rcard-meta b{color:var(--text);font-weight:500;}
+  .rcard-flags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;}
+  .flag-badge{font-size:10.5px;padding:3px 9px;border-radius:10px;font-weight:600;}
+  .flag-issue{background:var(--warn-bg);color:var(--warn);}
+  .flag-photo{background:rgba(201,160,74,0.12);color:var(--gold-bright);}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
+  .empty-state .es-icon{font-size:32px;margin-bottom:10px;}
+
+  /* detail modal */
+  #detail-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.75);z-index:90;
+    display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;}
+  .detail-panel{background:var(--navy-deep);border:1px solid var(--border);border-radius:14px;
+    max-width:640px;width:100%;padding:26px 24px 30px;position:relative;}
+  .detail-close{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--text-muted);
+    font-size:20px;cursor:pointer;}
+  .detail-close:hover{color:var(--gold);}
+  .detail-head{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+  .detail-head h2{font-family:'Fraunces',serif;font-size:20px;margin:0 0 4px;}
+  .detail-head .dh-meta{color:var(--text-muted);font-size:12.5px;}
+
+  .mode-toggle{display:flex;gap:8px;margin-bottom:18px;}
+  .mode-toggle button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--navy);
+    color:var(--text-muted);cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;}
+  .mode-toggle button.active{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,160,74,0.1);}
+  .mode-toggle button:disabled{opacity:0.35;cursor:not-allowed;}
+
+  .dgroup{margin-bottom:14px;}
+  .dgroup-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold-bright);margin-bottom:7px;font-weight:600;}
+  .ditem{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(201,160,74,0.08);font-size:13px;gap:10px;}
+  .ditem:last-child{border-bottom:none;}
+  .ditem-name{flex:1;}
+  .ditem-status{font-size:11px;padding:3px 9px;border-radius:10px;font-weight:600;white-space:nowrap;}
+  .status-ok{background:var(--ok-bg);color:var(--ok);}
+  .status-issue{background:var(--warn-bg);color:var(--warn);}
+  .status-neutral{background:var(--navy);color:var(--text-muted);}
+  .ditem-note{font-size:11.5px;color:var(--warn);font-style:italic;margin-top:2px;width:100%;}
+
+  .dcomments{background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;
+    font-size:13px;color:var(--text);margin-top:8px;}
+  .dphotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:8px;}
+  .dphotos a img{width:100%;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);}
+
+  .refresh-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:5px;
+    animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  .watermark{text-align:center;color:var(--text-muted);font-size:10px;margin-top:30px;letter-spacing:.05em;
+    text-transform:uppercase;opacity:0.6;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-lock">🔐</div>
+    <h1>Inspection Reports</h1>
+    <div class="ls">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
+    <input type="password" id="pw-input" placeholder="Enter password" maxlength="20">
+    <button class="login-btn" onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div id="main-app" class="hidden">
+  <header class="top">
+    <div>
+      <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
+      <h1>Inspection Reports</h1>
+      <div style="margin-top:10px;"><a href="index.html" style="color:var(--gold);font-size:11.5px;text-decoration:none;border:1px solid var(--border);padding:5px 14px;border-radius:14px;">&larr; New Inspection</a></div>
+    </div>
+    <div class="clock">
+      <div><span class="refresh-dot"></span>Live</div>
+      <div class="time" id="clock-time">--:--</div>
+      <div id="clock-date"></div>
+    </div>
+  </header>
+
+  <div class="tab-row" id="tab-row"></div>
+  <div class="filter-panel" id="filter-panel"></div>
+  <div class="result-meta" id="result-meta"></div>
+  <div class="card-grid" id="card-grid"></div>
+
+  <div class="watermark">Developed by Shrutik</div>
+</div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz-69e-XALVtmU1bJ2WpPpUbs39KVniUmsxNzDkxlH8LxErxg7qEWlytviprtTAJvL6xQ/exec";
+const PASSWORD = "12345";
+const ROOM_LABELS = {
+  canal_lounge: "Canal Lounge & Patio",
+  guest_suite: "Guest Suite",
+  stadium_box: "Stadium Box",
+  stadium_kitchen: "Stadium Kitchen",
+  stadium_lounge: "Stadium Lounge"
+};
+
+// =========================================================
+// LOGIN
+// =========================================================
+function tryLogin(){
+  const val = document.getElementById('pw-input').value;
+  if (val === PASSWORD){
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    initDashboard();
+  } else {
+    const card = document.querySelector('.login-card');
+    card.classList.add('shake');
+    document.getElementById('login-error').textContent = 'Incorrect password';
+    setTimeout(()=>card.classList.remove('shake'), 350);
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+// =========================================================
+// CLOCK
+// =========================================================
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clock-time').textContent = now.toLocaleTimeString('en-CA', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('clock-date').textContent = now.toLocaleDateString('en-CA', {weekday:'short', month:'short', day:'numeric'});
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// =========================================================
+// STATE
+// =========================================================
+let allData = [];
+let activeTab = 'all';       // all | room | month | date | unit
+let filters = { room:'', month:'', date:'', unit:'' };
+
+async function initDashboard(){
+  buildTabs();
+  buildFilterPanel();
+  await fetchData();
+  setInterval(fetchData, 45000); // silent background refresh
+}
+
+async function fetchData(){
+  try {
+    const res = await fetch(WEB_APP_URL);
+    const json = await res.json();
+    if (json.success){
+      allData = json.data;
+      renderCards();
+    }
+  } catch(err){
+    // silent fail on background refresh - don't disrupt the view
+    console.warn('Refresh failed', err);
+  }
+}
+
+// =========================================================
+// TABS + FILTER PANEL
+// =========================================================
+function buildTabs(){
+  const tabs = [
+    {key:'all', label:'All'},
+    {key:'room', label:'By Room'},
+    {key:'month', label:'By Month'},
+    {key:'date', label:'By Date'},
+    {key:'unit', label:'By Unit'}
+  ];
+  document.getElementById('tab-row').innerHTML = tabs.map(t =>
+    `<button class="tab ${t.key===activeTab?'active':''}" onclick="setTab('${t.key}')">${t.label}</button>`
+  ).join('');
+}
+
+function setTab(key){
+  activeTab = key;
+  filters = { room:'', month:'', date:'', unit:'' };
+  buildTabs();
+  buildFilterPanel();
+  renderCards();
+}
+
+function buildFilterPanel(){
+  const panel = document.getElementById('filter-panel');
+  if (activeTab === 'all'){
+    panel.innerHTML = `<span style="color:var(--text-muted);font-size:12.5px;">Showing every report, most recent first.</span>`;
+    return;
+  }
+  if (activeTab === 'room'){
+    let opts = '<option value="">Select a room...</option>';
+    for (const k in ROOM_LABELS) opts += `<option value="${k}">${ROOM_LABELS[k]}</option>`;
+    panel.innerHTML = `<select onchange="filters.room=this.value; renderCards();">${opts}</select>`;
+  } else if (activeTab === 'month'){
+    panel.innerHTML = `<input type="month" onchange="filters.month=this.value; renderCards();">`;
+  } else if (activeTab === 'date'){
+    panel.innerHTML = `<input type="date" onchange="filters.date=this.value; renderCards();">`;
+  } else if (activeTab === 'unit'){
+    panel.innerHTML = `<input type="text" placeholder="Unit # e.g. 1502" oninput="filters.unit=this.value; renderCards();">`;
+  }
+}
+
+// =========================================================
+// FILTER + RENDER CARDS
+// =========================================================
+function applyFilters(){
+  return allData.filter(r => {
+    if (filters.room && r.Room !== filters.room) return false;
+    if (filters.month && r.Date && !String(r.Date).startsWith(filters.month)) return false;
+    if (filters.date && r.Date && String(r.Date).slice(0,10) !== filters.date) return false;
+    if (filters.unit && !String(r.Unit || '').toLowerCase().includes(filters.unit.toLowerCase())) return false;
+    return true;
+  });
+}
+
+function countIssues(checklist){
+  if (!Array.isArray(checklist)) return 0;
+  let n = 0;
+  checklist.forEach(grp => (grp.items||[]).forEach(it => { if (it.issue) n++; }));
+  return n;
+}
+
+function renderCards(){
+  const data = applyFilters();
+  const grid = document.getElementById('card-grid');
+  const meta = document.getElementById('result-meta');
+  meta.innerHTML = `<b>${data.length}</b> report${data.length===1?'':'s'} found`;
+
+  if (!data.length){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="es-icon">📋</div>No reports match these filters yet.
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = data.map((r, idx) => {
+    const issues = countIssues(r.ChecklistJSON);
+    const photoCount = (r.PhotoURLs||[]).length;
+    return `<div class="rcard ${r.Mode==='post'?'post-mode':''}" onclick="openDetail(${allData.indexOf(r)})">
+      <div class="rcard-top">
+        <div class="rcard-room">${ROOM_LABELS[r.Room] || r.Room}</div>
+        <span class="mode-badge ${r.Mode}">${r.Mode}</span>
+      </div>
+      <div class="rcard-meta">
+        <b>Unit</b> ${r.Unit || '—'}<br>
+        <b>Date</b> ${r.Date || '—'} ${r.Time || ''}<br>
+        <b>Concierge</b> ${r.Concierge || '—'}
+      </div>
+      <div class="rcard-flags">
+        ${issues > 0 ? `<span class="flag-badge flag-issue">⚠ ${issues} issue${issues>1?'s':''}</span>` : ''}
+        ${photoCount > 0 ? `<span class="flag-badge flag-photo">📷 ${photoCount}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// =========================================================
+// DETAIL VIEW (with Pre/Post pairing)
+// =========================================================
+let detailPair = { pre:null, post:null };
+let detailMode = 'pre';
+
+function openDetail(dataIndex){
+  const record = allData[dataIndex];
+  const pair = allData.filter(r => r.RecordKey === record.RecordKey);
+  detailPair.pre = pair.find(r => r.Mode === 'pre') || null;
+  detailPair.post = pair.find(r => r.Mode === 'post') || null;
+  detailMode = record.Mode;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'detail-overlay';
+  overlay.onclick = (e) => { if (e.target.id === 'detail-overlay') closeDetail(); };
+  document.body.appendChild(overlay);
+  renderDetail();
+}
+
+function closeDetail(){
+  const el = document.getElementById('detail-overlay');
+  if (el) el.remove();
+}
+
+function switchDetailMode(mode){
+  detailMode = mode;
+  renderDetail();
+}
+
+function renderDetail(){
+  const overlay = document.getElementById('detail-overlay');
+  const record = detailPair[detailMode] || detailPair.pre || detailPair.post;
+  if (!record){ closeDetail(); return; }
+
+  const checklist = Array.isArray(record.ChecklistJSON) ? record.ChecklistJSON : [];
+  let groupsHtml = checklist.map(grp => {
+    const itemsHtml = grp.items.map(it => {
+      let statusHtml = '';
+      if (grp.kind === 'task'){
+        statusHtml = `<span class="ditem-status ${it.done?'status-ok':'status-neutral'}">${it.done?'Done':'Not done'}</span>`;
+      } else if (grp.kind === 'condition' || grp.kind === 'security'){
+        if (it.issue) statusHtml = `<span class="ditem-status status-issue">Issue</span>`;
+        else if (it.ok) statusHtml = `<span class="ditem-status status-ok">OK</span>`;
+        else statusHtml = `<span class="ditem-status status-neutral">Not checked</span>`;
+      } else if (grp.kind === 'supply'){
+        statusHtml = `<span class="ditem-status ${it.restocked?'status-ok':'status-neutral'}">${it.restocked?'Restocked':'—'}</span>`;
+      } else if (grp.kind === 'collect'){
+        if ('provided' in it) statusHtml = `<span class="ditem-status ${it.provided?'status-ok':'status-neutral'}">${it.provided?'Provided':'—'}</span>${it.fobNumber?` <span class="ditem-status status-neutral">#${it.fobNumber}</span>`:''}`;
+        else if ('returned' in it) statusHtml = `<span class="ditem-status ${it.returned?'status-ok':'status-neutral'}">${it.returned?'Returned':'—'}</span>`;
+      }
+      return `<div class="ditem">
+        <div class="ditem-name">${it.name}${it.note ? `<div class="ditem-note">${it.note}</div>` : ''}</div>
+        ${statusHtml}
+      </div>`;
+    }).join('');
+    return `<div class="dgroup"><div class="dgroup-title">${grp.title}</div>${itemsHtml}</div>`;
+  }).join('');
+
+  const photosHtml = (record.PhotoURLs||[]).length
+    ? `<div class="dphotos">${record.PhotoURLs.map(u=>`<a href="${u}" target="_blank"><img src="${u}"></a>`).join('')}</div>`
+    : '';
+
+  overlay.innerHTML = `
+    <div class="detail-panel">
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+      <div class="detail-head">
+        <h2>${ROOM_LABELS[record.Room] || record.Room}</h2>
+        <div class="dh-meta">Unit ${record.Unit} · ${record.Date} ${record.Time} · ${record.Concierge}</div>
+      </div>
+
+      <div class="mode-toggle">
+        <button class="${detailMode==='pre'?'active':''}" ${!detailPair.pre?'disabled':''} onclick="switchDetailMode('pre')">Pre-Inspection</button>
+        <button class="${detailMode==='post'?'active':''}" ${!detailPair.post?'disabled':''} onclick="switchDetailMode('post')">Post-Inspection</button>
+      </div>
+
+      ${groupsHtml}
+
+      ${record.Comments ? `<div class="dgroup-title" style="margin-top:14px;">Comments</div><div class="dcomments">${record.Comments}</div>` : ''}
+      ${photosHtml ? `<div class="dgroup-title" style="margin-top:14px;">Photos</div>${photosHtml}` : ''}
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
