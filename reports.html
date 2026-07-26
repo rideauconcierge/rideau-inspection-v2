@@ -360,7 +360,10 @@ function applyFilters(){
 function countIssues(checklist){
   if (!Array.isArray(checklist)) return 0;
   let n = 0;
-  checklist.forEach(grp => (grp.items||[]).forEach(it => { if (it.issue) n++; }));
+  checklist.forEach(grp => (grp.items||[]).forEach(it => {
+    if (it.issue) n++;
+    if (grp.kind === 'security' && it.unlocked) n++;
+  }));
   return n;
 }
 
@@ -460,9 +463,13 @@ function renderDetailView(overlay, record){
       let statusHtml = '';
       if (grp.kind === 'task'){
         statusHtml = `<span class="ditem-status ${it.done?'status-ok':'status-neutral'}">${it.done?'Done':'Not done'}</span>`;
-      } else if (grp.kind === 'condition' || grp.kind === 'security'){
+      } else if (grp.kind === 'security'){
+        if (it.unlocked) statusHtml = `<span class="ditem-status status-issue">Unlocked</span>`;
+        else if (it.locked) statusHtml = `<span class="ditem-status status-ok">Locked</span>`;
+        else statusHtml = `<span class="ditem-status status-neutral">Not set</span>`;
+      } else if (grp.kind === 'condition'){
         if (mode === 'pre'){
-          const label = grp.okLabel || (grp.kind==='security' ? 'Locked' : 'Clean');
+          const label = grp.okLabel || 'Clean';
           statusHtml = it.ok
             ? `<span class="ditem-status status-ok">${label}</span>`
             : `<span class="ditem-status status-neutral">Not confirmed</span>`;
@@ -548,9 +555,18 @@ function buildEditItemHtml(grp, gi, ii, it, mode){
       <div class="item-controls"><button type="button" class="pill ok ${it.done?'active':''}" data-role="done" onclick="togglePill(this)">Done</button></div></div>
     </div>`;
   }
-  if (grp.kind === 'condition' || grp.kind === 'security'){
+  if (grp.kind === 'security'){
+    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
+      <div class="item-top"><div class="item-name">${it.name}</div>
+      <div class="item-controls">
+        <button type="button" class="pill issue ${it.unlocked?'active':''}" data-role="unlocked" onclick="selectLockState(this)">Unlocked</button>
+        <button type="button" class="pill ok ${it.locked?'active':''}" data-role="locked" onclick="selectLockState(this)">Locked</button>
+      </div></div>
+    </div>`;
+  }
+  if (grp.kind === 'condition'){
     if (mode === 'pre'){
-      const label = grp.okLabel || (grp.kind==='security' ? 'Locked' : 'Clean');
+      const label = grp.okLabel || 'Clean';
       return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
         <div class="item-top"><div class="item-name">${it.name}</div>
         <div class="item-controls"><button type="button" class="pill ok ${it.ok?'active':''}" data-role="ok" onclick="togglePill(this)">${label}</button></div></div>
@@ -595,6 +611,11 @@ function toggleEditIssuePill(btn){
   const item = btn.closest('.item');
   const note = item.querySelector('.issue-note');
   if (note) note.classList.toggle('show', btn.classList.contains('active'));
+}
+function selectLockState(btn){
+  const controls = btn.parentElement;
+  controls.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
 }
 
 function renderDetailEdit(overlay, record){
@@ -644,7 +665,12 @@ function collectEditedChecklist(record){
       const rec = { name: it.name };
       if (grp.kind === 'task'){
         rec.done = el.querySelector('[data-role="done"]').classList.contains('active');
-      } else if (grp.kind === 'condition' || grp.kind === 'security'){
+      } else if (grp.kind === 'security'){
+        const lockedEl = el.querySelector('[data-role="locked"]');
+        const unlockedEl = el.querySelector('[data-role="unlocked"]');
+        rec.locked = lockedEl ? lockedEl.classList.contains('active') : false;
+        rec.unlocked = unlockedEl ? unlockedEl.classList.contains('active') : false;
+      } else if (grp.kind === 'condition'){
         const okEl = el.querySelector('[data-role="ok"]');
         const issueEl = el.querySelector('[data-role="issue"]');
         const noteEl = el.querySelector('[data-role="note"]');
@@ -674,7 +700,7 @@ function buildEditSummary(originalChecklist, updatedChecklist){
   (originalChecklist||[]).forEach(grp => (grp.items||[]).forEach(it => origFlat.push(it)));
   const updFlat = [];
   (updatedChecklist||[]).forEach(grp => (grp.items||[]).forEach(it => updFlat.push(it)));
-  const keys = ['ok','issue','done','restocked','provided','returned','note','fobNumber'];
+  const keys = ['ok','issue','done','restocked','provided','returned','note','fobNumber','locked','unlocked'];
   origFlat.forEach((o, idx) => {
     const u = updFlat[idx];
     if (!u) return;
