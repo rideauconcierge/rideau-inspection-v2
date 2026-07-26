@@ -102,6 +102,8 @@
     box-shadow:0 0 0 3px var(--ok-bg);}
   .pill.issue.active{background:var(--warn);border-color:var(--warn);color:#0b1826;font-weight:700;
     box-shadow:0 0 0 3px var(--warn-bg);}
+  .pill.select.active{background:var(--gold);border-color:var(--gold);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px rgba(201,160,74,0.25);}
 
   .qty-badge{background:var(--navy);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--text-muted);margin-right:2px;}
   .id-input{width:88px;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:6px;font-size:12px;}
@@ -392,8 +394,8 @@ function renderForm(){
           <div class="item-top">
             <div class="item-name">${item.name}</div>
             <div class="item-controls">
-              <button type="button" class="pill issue" data-role="unlocked" onclick="selectLockState(this)">Unlocked</button>
-              <button type="button" class="pill ok" data-role="locked" onclick="selectLockState(this)">Locked</button>
+              <button type="button" class="pill select" data-role="unlocked" onclick="selectLockState(this)">Unlocked</button>
+              <button type="button" class="pill select" data-role="locked" onclick="selectLockState(this)">Locked</button>
             </div>
           </div>
         </div>`;
