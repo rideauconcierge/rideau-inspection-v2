@@ -469,17 +469,18 @@ function renderDetailView(overlay, record){
         else statusHtml = `<span class="ditem-status status-neutral">Not set</span>`;
       } else if (grp.kind === 'condition'){
         if (mode === 'pre'){
-          const label = grp.okLabel || 'Clean';
+          const label = it.okLabel || grp.okLabel || 'Clean';
           statusHtml = it.ok
             ? `<span class="ditem-status status-ok">${label}</span>`
             : `<span class="ditem-status status-neutral">Not confirmed</span>`;
         } else {
-          statusHtml = it.issue
-            ? `<span class="ditem-status status-issue">Damage</span>`
-            : `<span class="ditem-status status-ok">No Damage</span>`;
+          if (it.issue) statusHtml = `<span class="ditem-status status-issue">Damage</span>`;
+          else if (it.noDamage) statusHtml = `<span class="ditem-status status-ok">No Damage</span>`;
+          else statusHtml = `<span class="ditem-status status-neutral">Not reviewed</span>`;
         }
       } else if (grp.kind === 'supply'){
-        statusHtml = `<span class="ditem-status ${it.restocked?'status-ok':'status-neutral'}">${it.restocked?'Restocked':'—'}</span>`;
+        const qtySet = it.restockedQty !== null && it.restockedQty !== undefined;
+        statusHtml = `<span class="ditem-status ${qtySet?'status-select':'status-neutral'}">${qtySet?('Qty: '+it.restockedQty):'Not set'}</span>`;
       } else if (grp.kind === 'collect'){
         if ('provided' in it) statusHtml = `<span class="ditem-status ${it.provided?'status-ok':'status-neutral'}">${it.provided?'Provided':'—'}</span>${it.fobNumber?` <span class="ditem-status status-neutral">#${it.fobNumber}</span>`:''}`;
         else if ('returned' in it) statusHtml = `<span class="ditem-status ${it.returned?'status-ok':'status-neutral'}">${it.returned?'Returned':'—'}</span>`;
@@ -566,7 +567,7 @@ function buildEditItemHtml(grp, gi, ii, it, mode){
   }
   if (grp.kind === 'condition'){
     if (mode === 'pre'){
-      const label = grp.okLabel || 'Clean';
+      const label = it.okLabel || grp.okLabel || 'Clean';
       return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
         <div class="item-top"><div class="item-name">${it.name}</div>
         <div class="item-controls"><button type="button" class="pill ok ${it.ok?'active':''}" data-role="ok" onclick="togglePill(this)">${label}</button></div></div>
@@ -574,14 +575,22 @@ function buildEditItemHtml(grp, gi, ii, it, mode){
     }
     return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
       <div class="item-top"><div class="item-name">${it.name}</div>
-      <div class="item-controls"><button type="button" class="pill issue ${it.issue?'active':''}" data-role="issue" onclick="toggleEditIssuePill(this)">Damage</button></div></div>
+      <div class="item-controls">
+        <button type="button" class="pill issue ${it.issue?'active':''}" data-role="issue" onclick="selectDamageState(this)">Damage</button>
+        <button type="button" class="pill ok ${it.noDamage?'active':''}" data-role="nodamage" onclick="selectDamageState(this)">No Damage</button>
+      </div></div>
       <div class="issue-note ${it.issue?'show':''}"><input type="text" data-role="note" value="${noteVal}" placeholder="Briefly note the issue..."></div>
     </div>`;
   }
   if (grp.kind === 'supply'){
+    const maxQty = (it.refQty || 0) + 1;
+    let qtyPills = '';
+    for (let q = 0; q <= maxQty; q++){
+      qtyPills += `<button type="button" class="pill select ${it.restockedQty===q?'active':''}" data-role="qty" data-qty="${q}" onclick="selectQty(this)">${q}</button>`;
+    }
     return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
-      <div class="item-top"><div class="item-name">${it.name}</div>
-      <div class="item-controls">${it.refQty?`<span class="qty-badge">Ref: ${it.refQty}</span>`:''}<button type="button" class="pill ok ${it.restocked?'active':''}" data-role="restocked" onclick="togglePill(this)">Restocked</button></div></div>
+      <div class="item-top"><div class="item-name">${it.name}</div>${it.refQty?`<span class="qty-badge">Ref: ${it.refQty}</span>`:''}</div>
+      <div class="item-controls" style="margin-top:9px;flex-wrap:wrap;">${qtyPills}</div>
     </div>`;
   }
   if (grp.kind === 'collect'){
@@ -616,6 +625,23 @@ function selectLockState(btn){
   const controls = btn.parentElement;
   controls.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
+}
+function selectQty(btn){
+  const controls = btn.parentElement;
+  controls.querySelectorAll('[data-role="qty"]').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+}
+function selectDamageState(btn){
+  const controls = btn.parentElement;
+  controls.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const item = btn.closest('.item');
+  const note = item.querySelector('.issue-note');
+  const isDamage = btn.dataset.role === 'issue';
+  if (note){
+    if (isDamage) note.classList.add('show');
+    else { note.classList.remove('show'); note.querySelector('input').value = ''; }
+  }
 }
 
 function renderDetailEdit(overlay, record){
@@ -673,13 +699,17 @@ function collectEditedChecklist(record){
       } else if (grp.kind === 'condition'){
         const okEl = el.querySelector('[data-role="ok"]');
         const issueEl = el.querySelector('[data-role="issue"]');
+        const noDamageEl = el.querySelector('[data-role="nodamage"]');
         const noteEl = el.querySelector('[data-role="note"]');
+        if (it.okLabel) rec.okLabel = it.okLabel;
         rec.ok = okEl ? okEl.classList.contains('active') : false;
         rec.issue = issueEl ? issueEl.classList.contains('active') : false;
+        rec.noDamage = noDamageEl ? noDamageEl.classList.contains('active') : false;
         rec.note = noteEl ? noteEl.value.trim() : '';
       } else if (grp.kind === 'supply'){
         if (it.refQty) rec.refQty = it.refQty;
-        rec.restocked = el.querySelector('[data-role="restocked"]').classList.contains('active');
+        const selectedQtyEl = el.querySelector('[data-role="qty"].active');
+        rec.restockedQty = selectedQtyEl ? parseInt(selectedQtyEl.dataset.qty, 10) : null;
       } else if (grp.kind === 'collect'){
         if (mode === 'pre'){
           if ('fobNumber' in it) rec.fobNumber = el.querySelector('[data-role="idnum"]').value;
@@ -700,7 +730,7 @@ function buildEditSummary(originalChecklist, updatedChecklist){
   (originalChecklist||[]).forEach(grp => (grp.items||[]).forEach(it => origFlat.push(it)));
   const updFlat = [];
   (updatedChecklist||[]).forEach(grp => (grp.items||[]).forEach(it => updFlat.push(it)));
-  const keys = ['ok','issue','done','restocked','provided','returned','note','fobNumber','locked','unlocked'];
+  const keys = ['ok','issue','noDamage','done','restockedQty','provided','returned','note','fobNumber','locked','unlocked'];
   origFlat.forEach((o, idx) => {
     const u = updFlat[idx];
     if (!u) return;
