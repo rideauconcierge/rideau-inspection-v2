@@ -94,10 +94,14 @@
   .item-name{font-size:13.5px;line-height:1.35;flex:1;min-width:140px;}
   .item-controls{display:flex;gap:8px;align-items:center;flex-shrink:0;}
 
-  .pill{padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--navy);font-size:11.5px;color:var(--text-muted);cursor:pointer;transition:all .12s;font-family:'Inter',sans-serif;white-space:nowrap;}
-  .pill:hover{border-color:var(--gold);}
-  .pill.ok.active{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);}
-  .pill.issue.active{background:var(--warn-bg);border-color:var(--warn);color:var(--warn);}
+  .pill{padding:8px 16px;border-radius:20px;border:1.5px solid rgba(201,160,74,0.45);background:var(--navy-light);
+    font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;transition:all .12s;
+    font-family:'Inter',sans-serif;white-space:nowrap;}
+  .pill:hover{border-color:var(--gold-bright);background:var(--navy-card);}
+  .pill.ok.active{background:var(--ok);border-color:var(--ok);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px var(--ok-bg);}
+  .pill.issue.active{background:var(--warn);border-color:var(--warn);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px var(--warn-bg);}
 
   .qty-badge{background:var(--navy);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--text-muted);margin-right:2px;}
   .id-input{width:88px;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:6px;font-size:12px;}
@@ -124,7 +128,7 @@
   .submit-btn{width:100%;background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);border:none;padding:15px;border-radius:9px;font-size:14.5px;font-weight:700;cursor:pointer;letter-spacing:.02em;font-family:'Inter',sans-serif;margin-top:6px;}
   .submit-btn:hover{filter:brightness(1.08);}
   .submit-btn:disabled{opacity:0.6;cursor:default;}
-  .preview-tag{text-align:center;color:var(--text-muted);font-size:11px;margin-top:14px;text-transform:uppercase;letter-spacing:.08em;}
+  .watermark{text-align:center;color:var(--text-muted);font-size:10px;margin-top:26px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6;}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy-card);border:1px solid var(--gold);color:var(--gold-bright);padding:12px 22px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;max-width:90vw;text-align:center;}
   .toast.show{opacity:1;bottom:32px;}
@@ -139,6 +143,7 @@
     <div style="margin-top:10px;"><a href="reports.html" style="color:var(--gold);font-size:11.5px;text-decoration:none;border:1px solid var(--border);padding:5px 14px;border-radius:14px;">View Reports &rarr;</a></div>
   </header>
   <div id="app"></div>
+  <div class="watermark">Designed by Shrutik</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -389,8 +394,9 @@ function renderForm(){
           <div class="item-top">
             <div class="item-name">${item.name}</div>
             <div class="item-controls">
-              <button type="button" class="pill ok" data-role="ok" onclick="togglePill(this)">${okLabel}</button>
-              ${isPre ? '' : `<button type="button" class="pill issue" data-role="issue" onclick="toggleIssuePill(this)">Issue</button>`}
+              ${isPre
+                ? `<button type="button" class="pill ok" data-role="ok" onclick="togglePill(this)">${okLabel}</button>`
+                : `<button type="button" class="pill issue" data-role="issue" onclick="toggleIssuePill(this)">Damage</button>`}
             </div>
           </div>
           ${isPre ? '' : `<div class="issue-note" id="note-${id}">
@@ -452,7 +458,6 @@ function renderForm(){
     </div>
 
     <button class="submit-btn" id="submit-btn" onclick="submitInspection()">Submit ${modeLabel}</button>
-    <div class="preview-tag" id="status-tag">Connected — submits write to your sheet</div>
   `;
 
   app.innerHTML = html;
@@ -564,9 +569,10 @@ function collectChecklist(){
       if (grp.kind === 'task'){
         rec.done = el.querySelector('[data-role="done"]').classList.contains('active');
       } else if (grp.kind === 'condition' || grp.kind === 'security'){
-        rec.ok = el.querySelector('[data-role="ok"]').classList.contains('active');
+        const okEl = el.querySelector('[data-role="ok"]');
         const issueEl = el.querySelector('[data-role="issue"]');
         const noteEl = el.querySelector('[data-role="note"]');
+        rec.ok = okEl ? okEl.classList.contains('active') : false;
         rec.issue = issueEl ? issueEl.classList.contains('active') : false;
         rec.note = noteEl ? noteEl.value.trim() : '';
       } else if (grp.kind === 'supply'){
