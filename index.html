@@ -73,6 +73,13 @@
   .field label{display:block;font-size:11.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
   .field input, .field textarea{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:10px 11px;border-radius:7px;font-size:14px;font-family:'Inter',sans-serif;}
   .field input:focus, .field textarea:focus{outline:none;border-color:var(--gold);}
+  .unit-suggestions{position:absolute;top:100%;left:0;right:0;background:var(--navy);
+    border:1px solid var(--gold);border-radius:7px;margin-top:4px;max-height:190px;
+    overflow-y:auto;z-index:20;display:none;box-shadow:0 8px 20px rgba(0,0,0,0.35);}
+  .unit-suggestions.show{display:block;}
+  .us-item{padding:9px 13px;font-size:13.5px;cursor:pointer;border-bottom:1px solid rgba(201,160,74,0.08);}
+  .us-item:last-child{border-bottom:none;}
+  .us-item:hover, .us-item.highlight{background:var(--navy-light);color:var(--gold-bright);}
 
   /* group cards */
   .group{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;}
@@ -225,6 +232,44 @@ const ROOMS = {
 };
 
 // =========================================================
+// UNIT NUMBER LIST — the building's actual valid units.
+// TH1-TH10, then 201-204, then 9-unit floors 3-16, then
+// 4-unit floors 17-20. Generated once, not hardcoded, so it
+// stays right if a floor's range ever needs adjusting.
+// =========================================================
+function generateUnitList(){
+  const units = [];
+  for (let i=1; i<=10; i++) units.push('TH'+i);
+  for (let u=201; u<=204; u++) units.push(String(u));
+  for (let f=3; f<=16; f++){
+    for (let u=1; u<=9; u++) units.push(String(f*100+u));
+  }
+  for (let f=17; f<=20; f++){
+    for (let u=1; u<=4; u++) units.push(String(f*100+u));
+  }
+  return units;
+}
+const UNIT_LIST = generateUnitList();
+
+function filterUnitSuggestions(input){
+  const val = input.value.trim().toUpperCase();
+  const box = document.getElementById('unit-suggestions');
+  if (!val){ box.innerHTML=''; box.classList.remove('show'); return; }
+  const matches = UNIT_LIST.filter(u => u.startsWith(val)).slice(0, 8);
+  if (!matches.length){ box.innerHTML=''; box.classList.remove('show'); return; }
+  box.innerHTML = matches.map(u => `<div class="us-item" onmousedown="selectUnit('${u}')">${u}</div>`).join('');
+  box.classList.add('show');
+}
+function selectUnit(u){
+  document.getElementById('f-unit').value = u;
+  hideUnitSuggestions();
+}
+function hideUnitSuggestions(){
+  const box = document.getElementById('unit-suggestions');
+  if (box){ box.classList.remove('show'); box.innerHTML=''; }
+}
+
+// =========================================================
 // STATE + NAV
 // =========================================================
 let state = { room:null, mode:null, photos:[] };
@@ -304,7 +349,13 @@ function renderForm(){
 
     <div class="field-grid">
       <div class="field"><label>Date</label><input type="date" id="f-date"></div>
-      <div class="field"><label>Unit #</label><input type="text" id="f-unit" placeholder="e.g. 1502"></div>
+      <div class="field" style="position:relative;">
+        <label>Unit #</label>
+        <input type="text" id="f-unit" placeholder="e.g. 1502 or TH3" autocomplete="off"
+          oninput="filterUnitSuggestions(this)" onfocus="filterUnitSuggestions(this)"
+          onblur="setTimeout(hideUnitSuggestions, 150)">
+        <div class="unit-suggestions" id="unit-suggestions"></div>
+      </div>
       <div class="field"><label>Concierge Name</label><input type="text" id="f-concierge" placeholder="Your name"></div>
       <div class="field"><label>Time</label><input type="time" id="f-time"></div>
     </div>
@@ -405,7 +456,21 @@ function renderForm(){
   `;
 
   app.innerHTML = html;
+  setDefaultDateTime();
   updateProgress();
+}
+
+function setDefaultDateTime(){
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mi = String(now.getMinutes()).padStart(2,'0');
+  const dateEl = document.getElementById('f-date');
+  const timeEl = document.getElementById('f-time');
+  if (dateEl) dateEl.value = `${yyyy}-${mm}-${dd}`;
+  if (timeEl) timeEl.value = `${hh}:${mi}`;
 }
 
 // =========================================================
