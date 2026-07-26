@@ -54,10 +54,19 @@
 
   /* filter tabs */
   .tab-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
-  .tab{background:var(--navy-card);border:1px solid var(--border);color:var(--text-muted);
-    padding:7px 16px;border-radius:20px;font-size:12.5px;cursor:pointer;transition:all .12s;}
-  .tab:hover{border-color:var(--gold);}
-  .tab.active{background:var(--gold);border-color:var(--gold);color:var(--navy-deep);font-weight:600;}
+  .tab{background:var(--navy-light);border:1.5px solid rgba(201,160,74,0.4);color:var(--text);
+    padding:8px 18px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .12s;}
+  .tab:hover{border-color:var(--gold-bright);background:var(--navy-card);}
+  .tab.active{background:var(--gold);border-color:var(--gold);color:var(--navy-deep);font-weight:700;
+    box-shadow:0 0 0 3px rgba(201,160,74,0.25);}
+
+  .master-banner{display:inline-block;margin-top:8px;background:var(--warn);color:#1a0a05;font-size:11px;
+    font-weight:800;letter-spacing:.06em;padding:5px 14px;border-radius:12px;text-transform:uppercase;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy-card);
+    border:1px solid var(--gold);color:var(--gold-bright);padding:12px 22px;border-radius:8px;font-size:13px;
+    opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;max-width:90vw;text-align:center;z-index:200;}
+  .toast.show{opacity:1;bottom:32px;}
 
   .filter-panel{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);
     padding:14px 16px;margin-bottom:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
@@ -104,11 +113,50 @@
   .detail-head h2{font-family:'Fraunces',serif;font-size:20px;margin:0 0 4px;}
   .detail-head .dh-meta{color:var(--text-muted);font-size:12.5px;}
 
-  .mode-toggle{display:flex;gap:8px;margin-bottom:18px;}
-  .mode-toggle button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--navy);
-    color:var(--text-muted);cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;}
-  .mode-toggle button.active{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,160,74,0.1);}
+  .mode-toggle{display:flex;gap:8px;margin-bottom:14px;}
+  .mode-toggle button{flex:1;padding:10px;border-radius:8px;border:1.5px solid rgba(201,160,74,0.4);background:var(--navy-light);
+    color:var(--text);cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;}
+  .mode-toggle button.active{border-color:var(--gold);color:#0b1826;background:var(--gold);font-weight:700;}
   .mode-toggle button:disabled{opacity:0.35;cursor:not-allowed;}
+
+  .action-row{display:flex;gap:8px;margin-bottom:16px;}
+  .edit-btn{flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--gold);background:rgba(201,160,74,0.14);
+    color:var(--gold-bright);cursor:pointer;font-weight:700;font-size:12.5px;font-family:'Inter',sans-serif;}
+  .edit-btn:hover{background:rgba(201,160,74,0.22);}
+  .cancel-btn{flex:1;padding:11px;border-radius:8px;border:1.5px solid var(--border);background:var(--navy);
+    color:var(--text-muted);cursor:pointer;font-weight:600;font-family:'Inter',sans-serif;}
+  .save-btn{flex:2;padding:11px;border-radius:8px;border:none;
+    background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);cursor:pointer;
+    font-weight:700;font-family:'Inter',sans-serif;}
+  .save-btn:disabled{opacity:0.6;cursor:default;}
+
+  /* editable items (edit mode reuses the same look as the form) */
+  .item{padding:10px 0;border-bottom:1px solid rgba(201,160,74,0.09);}
+  .item:last-child{border-bottom:none;}
+  .item-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .item-name{font-size:13px;line-height:1.35;flex:1;min-width:130px;}
+  .item-controls{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+  .pill{padding:7px 14px;border-radius:20px;border:1.5px solid rgba(201,160,74,0.45);background:var(--navy-light);
+    font-size:12px;font-weight:600;color:var(--text);cursor:pointer;transition:all .12s;
+    font-family:'Inter',sans-serif;white-space:nowrap;}
+  .pill:hover{border-color:var(--gold-bright);background:var(--navy-card);}
+  .pill.ok.active{background:var(--ok);border-color:var(--ok);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px var(--ok-bg);}
+  .pill.issue.active{background:var(--warn);border-color:var(--warn);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px var(--warn-bg);}
+  .qty-badge{background:var(--navy);border:1px solid var(--border);border-radius:5px;padding:3px 8px;
+    font-size:10.5px;color:var(--text-muted);}
+  .id-input{width:80px;background:var(--navy);border:1px solid var(--border);color:var(--text);
+    padding:6px 8px;border-radius:6px;font-size:11.5px;}
+  .issue-note{margin-top:8px;display:none;}
+  .issue-note.show{display:block;}
+  .issue-note input{width:100%;background:var(--navy-deep);border:1px solid var(--warn);color:var(--text);
+    padding:8px 10px;border-radius:6px;font-size:12px;}
+
+  .edit-history{max-height:220px;overflow-y:auto;}
+  .eh-entry{background:var(--navy-card);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:6px;font-size:12px;}
+  .eh-time{color:var(--gold-bright);font-weight:600;margin-bottom:3px;}
+  .eh-summary{color:var(--text-muted);word-break:break-word;}
 
   .dgroup{margin-bottom:14px;}
   .dgroup-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold-bright);margin-bottom:7px;font-weight:600;}
@@ -152,6 +200,7 @@
     <div>
       <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
       <h1>Inspection Reports</h1>
+      <div id="master-banner" class="master-banner hidden">🔑 MASTER REPORT</div>
       <div style="margin-top:10px;"><a href="index.html" style="color:var(--gold);font-size:11.5px;text-decoration:none;border:1px solid var(--border);padding:5px 14px;border-radius:14px;">&larr; New Inspection</a></div>
     </div>
     <div class="clock">
@@ -166,12 +215,15 @@
   <div class="result-meta" id="result-meta"></div>
   <div class="card-grid" id="card-grid"></div>
 
-  <div class="watermark">Developed by Shrutik</div>
+  <div class="watermark">Designed by Shrutik</div>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz-69e-XALVtmU1bJ2WpPpUbs39KVniUmsxNzDkxlH8LxErxg7qEWlytviprtTAJvL6xQ/exec";
-const PASSWORD = "12345";
+const PASSWORD_REGULAR = "12345";
+const PASSWORD_MASTER = "S12345";
+let isMaster = false;
 const ROOM_LABELS = {
   canal_lounge: "Canal Lounge & Patio",
   guest_suite: "Guest Suite",
@@ -185,9 +237,11 @@ const ROOM_LABELS = {
 // =========================================================
 function tryLogin(){
   const val = document.getElementById('pw-input').value;
-  if (val === PASSWORD){
+  if (val === PASSWORD_MASTER || val === PASSWORD_REGULAR){
+    isMaster = (val === PASSWORD_MASTER);
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('main-app').classList.remove('hidden');
+    document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
     initDashboard();
   } else {
     const card = document.querySelector('.login-card');
@@ -197,6 +251,16 @@ function tryLogin(){
   }
 }
 document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+// =========================================================
+// TOAST
+// =========================================================
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
 
 // =========================================================
 // CLOCK
@@ -335,10 +399,12 @@ function renderCards(){
 }
 
 // =========================================================
-// DETAIL VIEW (with Pre/Post pairing)
+// DETAIL VIEW (with Pre/Post pairing) + EDIT MODE
 // =========================================================
 let detailPair = { pre:null, post:null };
 let detailMode = 'pre';
+let editMode = false;
+let editSourceRecord = null; // deep snapshot of the record when Edit was clicked, for diffing
 
 function openDetail(dataIndex){
   const record = allData[dataIndex];
@@ -346,6 +412,8 @@ function openDetail(dataIndex){
   detailPair.pre = pair.find(r => r.Mode === 'pre') || null;
   detailPair.post = pair.find(r => r.Mode === 'post') || null;
   detailMode = record.Mode;
+  editMode = false;
+  editSourceRecord = null;
 
   const overlay = document.createElement('div');
   overlay.id = 'detail-overlay';
@@ -357,10 +425,13 @@ function openDetail(dataIndex){
 function closeDetail(){
   const el = document.getElementById('detail-overlay');
   if (el) el.remove();
+  editMode = false;
+  editSourceRecord = null;
 }
 
 function switchDetailMode(mode){
   detailMode = mode;
+  editMode = false;
   renderDetail();
 }
 
@@ -368,17 +439,29 @@ function renderDetail(){
   const overlay = document.getElementById('detail-overlay');
   const record = detailPair[detailMode] || detailPair.pre || detailPair.post;
   if (!record){ closeDetail(); return; }
+  if (editMode) renderDetailEdit(overlay, record);
+  else renderDetailView(overlay, record);
+}
 
+function renderDetailView(overlay, record){
   const checklist = Array.isArray(record.ChecklistJSON) ? record.ChecklistJSON : [];
+  const mode = record.Mode;
   let groupsHtml = checklist.map(grp => {
     const itemsHtml = grp.items.map(it => {
       let statusHtml = '';
       if (grp.kind === 'task'){
         statusHtml = `<span class="ditem-status ${it.done?'status-ok':'status-neutral'}">${it.done?'Done':'Not done'}</span>`;
       } else if (grp.kind === 'condition' || grp.kind === 'security'){
-        if (it.issue) statusHtml = `<span class="ditem-status status-issue">Issue</span>`;
-        else if (it.ok) statusHtml = `<span class="ditem-status status-ok">OK</span>`;
-        else statusHtml = `<span class="ditem-status status-neutral">Not checked</span>`;
+        if (mode === 'pre'){
+          const label = grp.okLabel || (grp.kind==='security' ? 'Locked' : 'Clean');
+          statusHtml = it.ok
+            ? `<span class="ditem-status status-ok">${label}</span>`
+            : `<span class="ditem-status status-neutral">Not confirmed</span>`;
+        } else {
+          statusHtml = it.issue
+            ? `<span class="ditem-status status-issue">Damage</span>`
+            : `<span class="ditem-status status-ok">No Damage</span>`;
+        }
       } else if (grp.kind === 'supply'){
         statusHtml = `<span class="ditem-status ${it.restocked?'status-ok':'status-neutral'}">${it.restocked?'Restocked':'—'}</span>`;
       } else if (grp.kind === 'collect'){
@@ -397,6 +480,15 @@ function renderDetail(){
     ? `<div class="dphotos">${record.PhotoURLs.map(u=>`<a href="${u}" target="_blank"><img src="${u}"></a>`).join('')}</div>`
     : '';
 
+  const historyHtml = (isMaster && record.EditHistory && record.EditHistory.length)
+    ? `<div class="dgroup-title" style="margin-top:14px;">Edit History <span style="color:var(--text-muted);font-weight:400;text-transform:none;">(master view)</span></div>
+       <div class="edit-history">${record.EditHistory.slice().reverse().map(h => `
+         <div class="eh-entry">
+           <div class="eh-time">${new Date(h.timestamp).toLocaleString('en-CA')}</div>
+           <div class="eh-summary">${h.summary}</div>
+         </div>`).join('')}</div>`
+    : '';
+
   overlay.innerHTML = `
     <div class="detail-panel">
       <button class="detail-close" onclick="closeDetail()">✕</button>
@@ -410,12 +502,241 @@ function renderDetail(){
         <button class="${detailMode==='post'?'active':''}" ${!detailPair.post?'disabled':''} onclick="switchDetailMode('post')">Post-Inspection</button>
       </div>
 
+      <div class="action-row">
+        <button class="edit-btn" onclick="enterEditMode()">✎ Edit Report</button>
+      </div>
+
       ${groupsHtml}
 
       ${record.Comments ? `<div class="dgroup-title" style="margin-top:14px;">Comments</div><div class="dcomments">${record.Comments}</div>` : ''}
       ${photosHtml ? `<div class="dgroup-title" style="margin-top:14px;">Photos</div>${photosHtml}` : ''}
+      ${historyHtml}
     </div>
   `;
+}
+
+// =========================================================
+// EDIT MODE
+// =========================================================
+function enterEditMode(){
+  const record = detailPair[detailMode] || detailPair.pre || detailPair.post;
+  editSourceRecord = JSON.parse(JSON.stringify(record)); // snapshot for diffing
+  editMode = true;
+  renderDetail();
+}
+
+function exitEditMode(){
+  editMode = false;
+  editSourceRecord = null;
+  renderDetail();
+}
+
+function buildEditItemHtml(grp, gi, ii, it, mode){
+  const noteVal = (it.note||'').replace(/"/g,'&quot;');
+  if (grp.kind === 'task'){
+    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
+      <div class="item-top"><div class="item-name">${it.name}</div>
+      <div class="item-controls"><button type="button" class="pill ok ${it.done?'active':''}" data-role="done" onclick="togglePill(this)">Done</button></div></div>
+    </div>`;
+  }
+  if (grp.kind === 'condition' || grp.kind === 'security'){
+    if (mode === 'pre'){
+      const label = grp.okLabel || (grp.kind==='security' ? 'Locked' : 'Clean');
+      return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
+        <div class="item-top"><div class="item-name">${it.name}</div>
+        <div class="item-controls"><button type="button" class="pill ok ${it.ok?'active':''}" data-role="ok" onclick="togglePill(this)">${label}</button></div></div>
+      </div>`;
+    }
+    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
+      <div class="item-top"><div class="item-name">${it.name}</div>
+      <div class="item-controls"><button type="button" class="pill issue ${it.issue?'active':''}" data-role="issue" onclick="toggleEditIssuePill(this)">Damage</button></div></div>
+      <div class="issue-note ${it.issue?'show':''}"><input type="text" data-role="note" value="${noteVal}" placeholder="Briefly note the issue..."></div>
+    </div>`;
+  }
+  if (grp.kind === 'supply'){
+    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
+      <div class="item-top"><div class="item-name">${it.name}</div>
+      <div class="item-controls">${it.refQty?`<span class="qty-badge">Ref: ${it.refQty}</span>`:''}<button type="button" class="pill ok ${it.restocked?'active':''}" data-role="restocked" onclick="togglePill(this)">Restocked</button></div></div>
+    </div>`;
+  }
+  if (grp.kind === 'collect'){
+    if (mode === 'pre'){
+      let fobHtml = '';
+      if ('fobNumber' in it){
+        let opts = '<option value="">Fob #</option>';
+        for (let n=1; n<=5; n++) opts += `<option value="${n}" ${String(it.fobNumber)===String(n)?'selected':''}>Fob ${n}</option>`;
+        fobHtml = `<select class="id-input" data-role="idnum">${opts}</select>`;
+      }
+      return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
+        <div class="item-top"><div class="item-name">${it.name}</div>
+        <div class="item-controls">${fobHtml}<button type="button" class="pill ok ${it.provided?'active':''}" data-role="provided" onclick="togglePill(this)">Provided</button></div></div>
+      </div>`;
+    }
+    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
+      <div class="item-top"><div class="item-name">${it.name}</div>
+      <div class="item-controls"><button type="button" class="pill ok ${it.returned?'active':''}" data-role="returned" onclick="togglePill(this)">Returned</button></div></div>
+    </div>`;
+  }
+  return '';
+}
+
+function togglePill(btn){ btn.classList.toggle('active'); }
+function toggleEditIssuePill(btn){
+  btn.classList.toggle('active');
+  const item = btn.closest('.item');
+  const note = item.querySelector('.issue-note');
+  if (note) note.classList.toggle('show', btn.classList.contains('active'));
+}
+
+function renderDetailEdit(overlay, record){
+  const checklist = Array.isArray(record.ChecklistJSON) ? record.ChecklistJSON : [];
+  const mode = record.Mode;
+  const groupsHtml = checklist.map((grp, gi) => {
+    const itemsHtml = grp.items.map((it, ii) => buildEditItemHtml(grp, gi, ii, it, mode)).join('');
+    return `<div class="dgroup"><div class="dgroup-title">${grp.title}</div>${itemsHtml}</div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div class="detail-panel">
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+      <div class="detail-head">
+        <h2>${ROOM_LABELS[record.Room] || record.Room} <span style="font-size:11px;color:var(--warn);text-transform:uppercase;letter-spacing:.05em;">· Editing</span></h2>
+        <div class="dh-meta">Unit ${record.Unit} · ${record.Date} · ${mode==='pre'?'Pre-Inspection':'Post-Inspection'}</div>
+      </div>
+
+      <div class="field-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:5px;">Concierge</label>
+          <input type="text" id="edit-concierge" value="${(record.Concierge||'').replace(/"/g,'&quot;')}"
+            style="width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:7px;font-size:13px;box-sizing:border-box;"></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:5px;">Time</label>
+          <input type="time" id="edit-time" value="${record.Time||''}"
+            style="width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:7px;font-size:13px;box-sizing:border-box;"></div>
+      </div>
+
+      ${groupsHtml}
+
+      <div class="dgroup-title" style="margin-top:14px;">Comments</div>
+      <textarea id="edit-comments" rows="3" style="width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;">${record.Comments||''}</textarea>
+
+      <div class="action-row" style="margin-top:18px;">
+        <button class="cancel-btn" onclick="exitEditMode()">Cancel</button>
+        <button class="save-btn" id="save-edit-btn" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  `;
+}
+
+function collectEditedChecklist(record){
+  const checklist = Array.isArray(record.ChecklistJSON) ? record.ChecklistJSON : [];
+  const mode = record.Mode;
+  return checklist.map((grp, gi) => {
+    const items = grp.items.map((it, ii) => {
+      const el = document.querySelector(`[data-egrp="${gi}"][data-eitem="${ii}"]`);
+      const rec = { name: it.name };
+      if (grp.kind === 'task'){
+        rec.done = el.querySelector('[data-role="done"]').classList.contains('active');
+      } else if (grp.kind === 'condition' || grp.kind === 'security'){
+        const okEl = el.querySelector('[data-role="ok"]');
+        const issueEl = el.querySelector('[data-role="issue"]');
+        const noteEl = el.querySelector('[data-role="note"]');
+        rec.ok = okEl ? okEl.classList.contains('active') : false;
+        rec.issue = issueEl ? issueEl.classList.contains('active') : false;
+        rec.note = noteEl ? noteEl.value.trim() : '';
+      } else if (grp.kind === 'supply'){
+        if (it.refQty) rec.refQty = it.refQty;
+        rec.restocked = el.querySelector('[data-role="restocked"]').classList.contains('active');
+      } else if (grp.kind === 'collect'){
+        if (mode === 'pre'){
+          if ('fobNumber' in it) rec.fobNumber = el.querySelector('[data-role="idnum"]').value;
+          rec.provided = el.querySelector('[data-role="provided"]').classList.contains('active');
+        } else {
+          rec.returned = el.querySelector('[data-role="returned"]').classList.contains('active');
+        }
+      }
+      return rec;
+    });
+    return { title: grp.title, kind: grp.kind, items };
+  });
+}
+
+function buildEditSummary(originalChecklist, updatedChecklist){
+  const changes = [];
+  const origFlat = [];
+  (originalChecklist||[]).forEach(grp => (grp.items||[]).forEach(it => origFlat.push(it)));
+  const updFlat = [];
+  (updatedChecklist||[]).forEach(grp => (grp.items||[]).forEach(it => updFlat.push(it)));
+  const keys = ['ok','issue','done','restocked','provided','returned','note','fobNumber'];
+  origFlat.forEach((o, idx) => {
+    const u = updFlat[idx];
+    if (!u) return;
+    keys.forEach(k => {
+      const ov = o[k] === undefined ? null : o[k];
+      const uv = u[k] === undefined ? null : u[k];
+      if (JSON.stringify(ov) !== JSON.stringify(uv)){
+        changes.push(`${o.name} (${k}): ${JSON.stringify(ov)} \u2192 ${JSON.stringify(uv)}`);
+      }
+    });
+  });
+  return changes;
+}
+
+async function saveEdit(){
+  const original = editSourceRecord;
+  const current = detailPair[detailMode] || detailPair.pre || detailPair.post;
+  const newChecklist = collectEditedChecklist(current);
+  const newComments = document.getElementById('edit-comments').value;
+  const newConcierge = document.getElementById('edit-concierge').value;
+  const newTime = document.getElementById('edit-time').value;
+
+  const changes = buildEditSummary(original.ChecklistJSON, newChecklist);
+  if (newComments !== (original.Comments||'')) changes.push('Comments updated');
+  if (newConcierge !== (original.Concierge||'')) changes.push(`Concierge: "${original.Concierge||''}" \u2192 "${newConcierge}"`);
+  if (newTime !== (original.Time||'')) changes.push(`Time: ${original.Time||''} \u2192 ${newTime}`);
+
+  if (!changes.length){
+    toast('No changes made');
+    exitEditMode();
+    return;
+  }
+
+  const btn = document.getElementById('save-edit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'update',
+        submissionId: current.SubmissionID,
+        concierge: newConcierge,
+        time: newTime,
+        checklist: newChecklist,
+        comments: newComments,
+        editSummary: changes.join('; ')
+      })
+    });
+    const result = await res.json();
+    if (result.success){
+      toast('Changes saved');
+      editMode = false;
+      editSourceRecord = null;
+      await fetchData();
+      const pair = allData.filter(r => r.RecordKey === current.RecordKey);
+      detailPair.pre = pair.find(r => r.Mode === 'pre') || null;
+      detailPair.post = pair.find(r => r.Mode === 'post') || null;
+      renderDetail();
+    } else {
+      toast('Save failed: ' + (result.error || 'unknown error'));
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+    }
+  } catch (err) {
+    toast('Network error while saving');
+    btn.disabled = false;
+    btn.textContent = 'Save Changes';
+  }
 }
 </script>
 </body>
