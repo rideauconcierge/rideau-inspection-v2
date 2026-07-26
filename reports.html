@@ -144,6 +144,8 @@
     box-shadow:0 0 0 3px var(--ok-bg);}
   .pill.issue.active{background:var(--warn);border-color:var(--warn);color:#0b1826;font-weight:700;
     box-shadow:0 0 0 3px var(--warn-bg);}
+  .pill.select.active{background:var(--gold);border-color:var(--gold);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px rgba(201,160,74,0.25);}
   .qty-badge{background:var(--navy);border:1px solid var(--border);border-radius:5px;padding:3px 8px;
     font-size:10.5px;color:var(--text-muted);}
   .id-input{width:80px;background:var(--navy);border:1px solid var(--border);color:var(--text);
@@ -167,6 +169,7 @@
   .status-ok{background:var(--ok-bg);color:var(--ok);}
   .status-issue{background:var(--warn-bg);color:var(--warn);}
   .status-neutral{background:var(--navy);color:var(--text-muted);}
+  .status-select{background:rgba(201,160,74,0.16);color:var(--gold-bright);}
   .ditem-note{font-size:11.5px;color:var(--warn);font-style:italic;margin-top:2px;width:100%;}
 
   .dcomments{background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;
@@ -360,10 +363,7 @@ function applyFilters(){
 function countIssues(checklist){
   if (!Array.isArray(checklist)) return 0;
   let n = 0;
-  checklist.forEach(grp => (grp.items||[]).forEach(it => {
-    if (it.issue) n++;
-    if (grp.kind === 'security' && it.unlocked) n++;
-  }));
+  checklist.forEach(grp => (grp.items||[]).forEach(it => { if (it.issue) n++; }));
   return n;
 }
 
@@ -464,8 +464,8 @@ function renderDetailView(overlay, record){
       if (grp.kind === 'task'){
         statusHtml = `<span class="ditem-status ${it.done?'status-ok':'status-neutral'}">${it.done?'Done':'Not done'}</span>`;
       } else if (grp.kind === 'security'){
-        if (it.unlocked) statusHtml = `<span class="ditem-status status-issue">Unlocked</span>`;
-        else if (it.locked) statusHtml = `<span class="ditem-status status-ok">Locked</span>`;
+        if (it.unlocked) statusHtml = `<span class="ditem-status status-select">Unlocked</span>`;
+        else if (it.locked) statusHtml = `<span class="ditem-status status-select">Locked</span>`;
         else statusHtml = `<span class="ditem-status status-neutral">Not set</span>`;
       } else if (grp.kind === 'condition'){
         if (mode === 'pre'){
@@ -559,8 +559,8 @@ function buildEditItemHtml(grp, gi, ii, it, mode){
     return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
       <div class="item-top"><div class="item-name">${it.name}</div>
       <div class="item-controls">
-        <button type="button" class="pill issue ${it.unlocked?'active':''}" data-role="unlocked" onclick="selectLockState(this)">Unlocked</button>
-        <button type="button" class="pill ok ${it.locked?'active':''}" data-role="locked" onclick="selectLockState(this)">Locked</button>
+        <button type="button" class="pill select ${it.unlocked?'active':''}" data-role="unlocked" onclick="selectLockState(this)">Unlocked</button>
+        <button type="button" class="pill select ${it.locked?'active':''}" data-role="locked" onclick="selectLockState(this)">Locked</button>
       </div></div>
     </div>`;
   }
