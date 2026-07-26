@@ -387,10 +387,20 @@ function renderForm(){
             </div>
           </div>
         </div>`;
-      } else if (grp.kind === 'condition' || grp.kind === 'security'){
-        const okLabel = grp.okLabel || (grp.kind === 'security' ? 'Locked' : 'Clean');
+      } else if (grp.kind === 'security'){
+        html += `<div class="item" data-grp="${gi}" data-item="${ii}" data-kind="security">
+          <div class="item-top">
+            <div class="item-name">${item.name}</div>
+            <div class="item-controls">
+              <button type="button" class="pill issue" data-role="unlocked" onclick="selectLockState(this)">Unlocked</button>
+              <button type="button" class="pill ok" data-role="locked" onclick="selectLockState(this)">Locked</button>
+            </div>
+          </div>
+        </div>`;
+      } else if (grp.kind === 'condition'){
+        const okLabel = grp.okLabel || 'Clean';
         const isPre = state.mode === 'pre';
-        html += `<div class="item" data-grp="${gi}" data-item="${ii}" data-kind="${grp.kind}">
+        html += `<div class="item" data-grp="${gi}" data-item="${ii}" data-kind="condition">
           <div class="item-top">
             <div class="item-name">${item.name}</div>
             <div class="item-controls">
@@ -501,6 +511,14 @@ function toggleIssuePill(btn){
   updateFlaggedSummary();
 }
 
+function selectLockState(btn){
+  const controls = btn.parentElement;
+  controls.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  updateProgress();
+  updateFlaggedSummary();
+}
+
 function updateProgress(){
   const items = document.querySelectorAll('.item');
   let total = items.length, done = 0;
@@ -528,8 +546,10 @@ function updateFlaggedSummary(){
   list.innerHTML = Array.from(issues).map(btn => {
     const item = btn.closest('.item');
     const name = item.querySelector('.item-name').textContent;
-    const note = item.querySelector('.issue-note input').value.trim();
-    return `<li>${name}${note ? ` — <span class="fl-note">${note}</span>` : ''}</li>`;
+    const noteEl = item.querySelector('.issue-note input');
+    const note = noteEl ? noteEl.value.trim() : '';
+    const label = btn.textContent.trim();
+    return `<li>${name} <span class="fl-note">(${label}${note ? ': '+note : ''})</span></li>`;
   }).join('');
 }
 
@@ -568,7 +588,12 @@ function collectChecklist(){
 
       if (grp.kind === 'task'){
         rec.done = el.querySelector('[data-role="done"]').classList.contains('active');
-      } else if (grp.kind === 'condition' || grp.kind === 'security'){
+      } else if (grp.kind === 'security'){
+        const lockedEl = el.querySelector('[data-role="locked"]');
+        const unlockedEl = el.querySelector('[data-role="unlocked"]');
+        rec.locked = lockedEl ? lockedEl.classList.contains('active') : false;
+        rec.unlocked = unlockedEl ? unlockedEl.classList.contains('active') : false;
+      } else if (grp.kind === 'condition'){
         const okEl = el.querySelector('[data-role="ok"]');
         const issueEl = el.querySelector('[data-role="issue"]');
         const noteEl = el.querySelector('[data-role="note"]');
