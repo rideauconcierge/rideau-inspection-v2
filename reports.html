@@ -380,7 +380,7 @@ function renderCards(){
   grid.innerHTML = data.map((r, idx) => {
     const issues = countIssues(r.ChecklistJSON);
     const photoCount = (r.PhotoURLs||[]).length;
-    return `<div class="rcard ${r.Mode==='post'?'post-mode':''}" onclick="openDetail(${allData.indexOf(r)})">
+    return `<div class="rcard ${r.Mode==='post'?'post-mode':''}" onclick="openDetailById('${r.SubmissionID}')">
       <div class="rcard-top">
         <div class="rcard-room">${ROOM_LABELS[r.Room] || r.Room}</div>
         <span class="mode-badge ${r.Mode}">${r.Mode}</span>
@@ -406,8 +406,17 @@ let detailMode = 'pre';
 let editMode = false;
 let editSourceRecord = null; // deep snapshot of the record when Edit was clicked, for diffing
 
-function openDetail(dataIndex){
-  const record = allData[dataIndex];
+function openDetailById(submissionId){
+  const record = allData.find(r => r.SubmissionID === submissionId);
+  if (!record){
+    toast('Could not find that report - refreshing...');
+    fetchData();
+    return;
+  }
+  openDetail(record);
+}
+
+function openDetail(record){
   const pair = allData.filter(r => r.RecordKey === record.RecordKey);
   detailPair.pre = pair.find(r => r.Mode === 'pre') || null;
   detailPair.post = pair.find(r => r.Mode === 'post') || null;
