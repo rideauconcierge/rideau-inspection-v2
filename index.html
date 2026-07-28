@@ -134,9 +134,42 @@
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy-card);border:1px solid var(--gold);color:var(--gold-bright);padding:12px 22px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;max-width:90vw;text-align:center;}
   .toast.show{opacity:1;bottom:32px;}
+
+  /* ---- INTRO SPLASH (zoom logo -> shrink -> rule -> tagline) ---- */
+  #intro-gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:var(--navy-deep);
+    background-image:radial-gradient(circle at 50% 30%, rgba(201,160,74,0.10), transparent 55%);
+    z-index:100;overflow:hidden;}
+  .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);pointer-events:none;}
+  .gate-content{position:relative;z-index:2;text-align:center;padding:20px;}
+  .gate-logo-wrap{position:relative;width:min(46vw,160px);margin:0 auto;opacity:0;transform:scale(2.4);filter:blur(8px);
+    transition:opacity 1s ease,transform 1.5s cubic-bezier(0.16,1,0.3,1),filter 1s ease;}
+  .gate-logo-wrap.show{opacity:1;filter:blur(0px);}
+  .gate-logo-wrap.shrink{transform:scale(1);}
+  .gate-logo-img{width:100%;display:block;filter:drop-shadow(0 0 30px rgba(201,160,74,0.4)) drop-shadow(0 0 60px rgba(201,160,74,0.15));}
+  .gate-rule{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:20px auto 0;
+    transition:width 0.9s cubic-bezier(0.22,1,0.36,1);}
+  .gate-rule.show{width:180px;}
+  .gate-tagline{font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--text);line-height:1.4;
+    margin-top:16px;letter-spacing:0.3px;opacity:0;transform:translateY(10px);transition:all 0.8s ease;}
+  .gate-tagline.show{opacity:1;transform:translateY(0);}
+  .gate-hint{font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;
+    margin-top:8px;opacity:0;transition:opacity 0.8s ease;}
+  .gate-hint.show{opacity:1;}
 </style>
 </head>
 <body>
+<div id="intro-gate">
+  <div class="gate-vignette"></div>
+  <div class="gate-content">
+    <div class="gate-logo-wrap" id="gateLogoWrap">
+      <img class="gate-logo-img" src="logo.png" alt="The Rideau">
+    </div>
+    <div class="gate-rule" id="gateRule"></div>
+    <div class="gate-tagline" id="gateTagline">Amenity Inspections</div>
+    <div class="gate-hint" id="gateHint">1035 BANK STREET</div>
+  </div>
+</div>
 <div class="wrap">
   <header class="top">
     <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
@@ -705,6 +738,24 @@ async function submitInspection(){
 }
 
 renderRoomSelect();
+
+// =========================================================
+// INTRO SPLASH ANIMATION
+// =========================================================
+function startGate(){
+  setTimeout(function(){ document.getElementById('gateLogoWrap').classList.add('show'); }, 150);
+  setTimeout(function(){ document.getElementById('gateLogoWrap').classList.add('shrink'); }, 1500);
+  setTimeout(function(){ document.getElementById('gateRule').classList.add('show'); }, 2300);
+  setTimeout(function(){ document.getElementById('gateTagline').classList.add('show'); }, 2500);
+  setTimeout(function(){ document.getElementById('gateHint').classList.add('show'); }, 2650);
+  setTimeout(function(){
+    const gate = document.getElementById('intro-gate');
+    gate.style.transition = 'opacity 0.7s ease';
+    gate.style.opacity = '0';
+    setTimeout(function(){ gate.style.display = 'none'; }, 700);
+  }, 3600);
+}
+startGate();
 </script>
 </body>
 </html>
