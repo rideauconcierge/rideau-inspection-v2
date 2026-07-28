@@ -39,8 +39,8 @@
     transition:opacity .6s ease;}
   .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);}
 
-  #login-screen{position:fixed;inset:0;z-index:130;display:flex;align-items:center;justify-content:center;
-    padding-top:100px;}
+  #login-screen{position:fixed;inset:0;z-index:130;display:flex;align-items:flex-start;justify-content:center;
+    padding-top:110px;}
   .gate-content{position:relative;text-align:center;padding:20px;width:100%;max-width:380px;
     opacity:0;transform:translateY(10px);transition:opacity .6s ease, transform .6s ease;}
   .gate-content.show{opacity:1;transform:translateY(0);}
@@ -274,10 +274,10 @@ function startGate(){
 
   setTimeout(function(){ logo.classList.add('visible'); }, 100);
   setTimeout(function(){ logo.classList.add('docked'); }, 650);
-  setTimeout(function(){
+  setTimeout(function(){                              // fires the instant the dock motion (0.85s) finishes
     content.classList.add('show');
     document.getElementById('pw-input').focus();
-  }, 1550);
+  }, 1500);
 }
 startGate();
 
