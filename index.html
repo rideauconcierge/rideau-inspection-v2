@@ -156,6 +156,9 @@
   .gate-hint{font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;
     margin-top:8px;opacity:0;transition:opacity 0.8s ease;}
   .gate-hint.show{opacity:1;}
+  .header-logo{width:52px;height:auto;display:block;margin:0 auto 8px;opacity:0;transition:opacity .8s ease;
+    filter:drop-shadow(0 4px 14px rgba(201,160,74,0.3));}
+  .header-logo.show{opacity:1;}
 </style>
 </head>
 <body>
@@ -172,6 +175,7 @@
 </div>
 <div class="wrap">
   <header class="top">
+    <img class="header-logo" id="headerLogo" src="logo.png" alt="The Rideau">
     <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
     <h1>Amenity Inspections</h1>
     <div class="sub">Select a room to begin</div>
@@ -750,9 +754,21 @@ function startGate(){
   setTimeout(function(){ document.getElementById('gateHint').classList.add('show'); }, 2650);
   setTimeout(function(){
     const gate = document.getElementById('intro-gate');
-    gate.style.transition = 'opacity 0.7s ease';
-    gate.style.opacity = '0';
-    setTimeout(function(){ gate.style.display = 'none'; }, 700);
+    gate.style.transition = 'background-color 0.8s ease';
+    gate.style.backgroundColor = 'transparent';
+    gate.style.backgroundImage = 'none';
+    document.querySelector('#intro-gate .gate-vignette').style.transition = 'opacity 0.8s ease';
+    document.querySelector('#intro-gate .gate-vignette').style.opacity = '0';
+    document.getElementById('gateRule').style.transition = 'opacity 0.5s ease';
+    document.getElementById('gateRule').style.opacity = '0';
+    document.getElementById('gateTagline').style.transition = 'opacity 0.5s ease';
+    document.getElementById('gateTagline').style.opacity = '0';
+    document.getElementById('gateHint').style.transition = 'opacity 0.5s ease';
+    document.getElementById('gateHint').style.opacity = '0';
+    document.getElementById('gateLogoWrap').style.transition = 'opacity 0.8s ease';
+    document.getElementById('gateLogoWrap').style.opacity = '0';
+    document.getElementById('headerLogo').classList.add('show');
+    setTimeout(function(){ gate.style.display = 'none'; }, 850);
   }, 3600);
 }
 startGate();
