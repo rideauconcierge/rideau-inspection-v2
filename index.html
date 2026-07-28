@@ -140,19 +140,19 @@
   #siteLogo{position:fixed;z-index:150;top:50%;left:50%;
     transform:translate(-50%,-50%);width:min(46vw,170px);
     opacity:0;filter:blur(10px);
-    transition:top 1.3s cubic-bezier(0.16,1,0.3,1), transform 1.3s cubic-bezier(0.16,1,0.3,1),
-      width 1.3s cubic-bezier(0.16,1,0.3,1), opacity .9s ease, filter .9s ease;}
+    transition:top .85s cubic-bezier(0.16,1,0.3,1), transform .85s cubic-bezier(0.16,1,0.3,1),
+      width .85s cubic-bezier(0.16,1,0.3,1), opacity .5s ease, filter .5s ease;}
   #siteLogo.visible{opacity:1;filter:drop-shadow(0 0 30px rgba(201,160,74,0.4)) drop-shadow(0 0 60px rgba(201,160,74,0.15));}
   #siteLogo.docked{top:26px;transform:translate(-50%,0);width:50px;
     filter:drop-shadow(0 4px 14px rgba(201,160,74,0.3));}
 
   #gateBackdrop{position:fixed;inset:0;z-index:120;background:var(--navy-deep);
     background-image:radial-gradient(circle at 50% 30%, rgba(201,160,74,0.10), transparent 55%);
-    transition:opacity .8s ease;}
+    transition:opacity .6s ease;}
   .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);}
 
-  #pageWrap{opacity:0;transform:translateY(14px);transition:opacity .8s ease, transform .8s ease;
-    padding-top:56px;}
+  #pageWrap{opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease;
+    padding-top:104px;}
   #pageWrap.show{opacity:1;transform:translateY(0);}
 </style>
 </head>
@@ -736,13 +736,13 @@ function startGate(){
   const backdrop = document.getElementById('gateBackdrop');
   const page = document.getElementById('pageWrap');
 
-  setTimeout(function(){ logo.classList.add('visible'); }, 150);      // fade/unblur in place, still large & centered
-  setTimeout(function(){ logo.classList.add('docked'); }, 1400);      // floats up + shrinks to its resting spot
-  setTimeout(function(){ backdrop.style.opacity = '0'; }, 2500);      // backdrop clears once logo has landed
+  setTimeout(function(){ logo.classList.add('visible'); }, 100);     // fade/unblur in place, still large & centered
+  setTimeout(function(){ logo.classList.add('docked'); }, 650);      // floats up + shrinks to its resting spot
+  setTimeout(function(){ backdrop.style.opacity = '0'; }, 1550);     // backdrop clears once logo has landed
   setTimeout(function(){
     backdrop.style.display = 'none';
     page.classList.add('show');                                     // page content reveals under the docked logo
-  }, 3300);
+  }, 2150);
 }
 startGate();
 </script>
