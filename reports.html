@@ -23,25 +23,44 @@
     color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
   .hidden{display:none !important;}
 
-  /* ---- LOGIN GATE ---- */
+  /* ---- LOGIN GATE (zoom logo -> shrink -> rule -> tagline -> form) ---- */
   #login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
     background:var(--navy-deep);
     background-image:radial-gradient(circle at 50% 30%, rgba(201,160,74,0.10), transparent 55%);
-    z-index:100;}
-  .login-card{text-align:center;padding:40px 36px;background:var(--navy-card);border:1px solid var(--border);
-    border-radius:14px;max-width:340px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
-  .login-lock{font-size:34px;margin-bottom:10px;}
-  .login-card h1{font-family:'Fraunces',serif;font-size:22px;margin:0 0 4px;}
-  .login-card .ls{color:var(--text-muted);font-size:12px;margin-bottom:22px;}
-  .login-card input{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);
-    padding:12px 14px;border-radius:8px;font-size:15px;text-align:center;letter-spacing:0.2em;margin-bottom:14px;}
-  .login-card input:focus{outline:none;border-color:var(--gold);}
-  .login-btn{width:100%;background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);
-    border:none;padding:13px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
-  .login-btn:hover{filter:brightness(1.08);}
-  .login-error{color:var(--warn);font-size:12px;margin-top:10px;min-height:16px;}
-  .shake{animation:shake .35s;}
-  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+    z-index:100;overflow:hidden;}
+  .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);pointer-events:none;}
+  .gate-content{position:relative;z-index:2;text-align:center;padding:20px;width:100%;max-width:380px;}
+  .gate-logo-wrap{position:relative;width:min(46vw,160px);margin:0 auto;opacity:0;transform:scale(2.4);filter:blur(8px);
+    transition:opacity 1s ease,transform 1.5s cubic-bezier(0.16,1,0.3,1),filter 1s ease;}
+  .gate-logo-wrap.show{opacity:1;filter:blur(0px);}
+  .gate-logo-wrap.shrink{transform:scale(1);}
+  .gate-logo-img{width:100%;display:block;filter:drop-shadow(0 0 30px rgba(201,160,74,0.4)) drop-shadow(0 0 60px rgba(201,160,74,0.15));}
+  .gate-rule{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:20px auto 0;
+    transition:width 0.9s cubic-bezier(0.22,1,0.36,1);}
+  .gate-rule.show{width:180px;}
+  .gate-tagline{font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--text);line-height:1.4;
+    margin-top:16px;letter-spacing:0.3px;opacity:0;transform:translateY(10px);transition:all 0.8s ease;}
+  .gate-tagline.show{opacity:1;transform:translateY(0);}
+  .gate-hint{font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;
+    margin-top:8px;margin-bottom:24px;opacity:0;transition:opacity 0.8s ease;}
+  .gate-hint.show{opacity:1;}
+  .gate-form{opacity:0;transform:translateY(10px);transition:all 0.8s ease;}
+  .gate-form.show{opacity:1;transform:translateY(0);}
+  .gate-input{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);
+    padding:13px 18px;border-radius:10px;font-size:16px;text-align:center;letter-spacing:0.3em;
+    outline:none;font-family:'Inter',sans-serif;transition:border-color .2s,box-shadow .2s;box-sizing:border-box;}
+  .gate-input:focus{border-color:var(--gold);box-shadow:0 0 20px rgba(201,160,74,0.25);}
+  .gate-input.error{border-color:var(--warn);box-shadow:0 0 20px rgba(201,106,82,0.25);animation:gateShake .4s ease;}
+  .gate-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);
+    border:none;padding:13px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:0.05em;
+    cursor:pointer;font-family:'Inter',sans-serif;transition:filter .2s,transform .1s;}
+  .gate-btn:hover{filter:brightness(1.08);}
+  .gate-btn:active{transform:scale(0.98);}
+  .gate-error{color:var(--warn);font-size:12px;margin-top:10px;min-height:16px;}
+  .gate-watermark{position:absolute;bottom:22px;left:0;right:0;text-align:center;font-size:10px;
+    color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;opacity:0.6;}
+  .gate-watermark span{color:var(--gold-bright);}
+  @keyframes gateShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
 
   /* ---- MAIN APP ---- */
   #main-app{max-width:1100px;margin:0 auto;padding:22px 16px 70px;}
@@ -188,14 +207,21 @@
 <body>
 
 <div id="login-screen">
-  <div class="login-card">
-    <div class="login-lock">🔐</div>
-    <h1>Inspection Reports</h1>
-    <div class="ls">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
-    <input type="password" id="pw-input" placeholder="Enter password" maxlength="20">
-    <button class="login-btn" onclick="tryLogin()">Enter</button>
-    <div class="login-error" id="login-error"></div>
+  <div class="gate-vignette"></div>
+  <div class="gate-content">
+    <div class="gate-logo-wrap" id="gateLogoWrap">
+      <img class="gate-logo-img" src="logo.png" alt="The Rideau">
+    </div>
+    <div class="gate-rule" id="gateRule"></div>
+    <div class="gate-tagline" id="gateTagline">Inspection Reports</div>
+    <div class="gate-hint" id="gateHint">ENTER PASSWORD TO CONTINUE</div>
+    <div class="gate-form" id="gateForm">
+      <input class="gate-input" type="password" id="pw-input" placeholder="••••••••" maxlength="20" autocomplete="off" onkeydown="if(event.key==='Enter')tryLogin()">
+      <button class="gate-btn" onclick="tryLogin()">ENTER</button>
+      <div class="gate-error" id="login-error"></div>
+    </div>
   </div>
+  <div class="gate-watermark">Designed by <span>Shrutik</span></div>
 </div>
 
 <div id="main-app" class="hidden">
@@ -236,24 +262,41 @@ const ROOM_LABELS = {
 };
 
 // =========================================================
-// LOGIN
+// LOGIN GATE ANIMATION
 // =========================================================
+function startGate(){
+  setTimeout(function(){ document.getElementById('gateLogoWrap').classList.add('show'); }, 150);
+  setTimeout(function(){ document.getElementById('gateLogoWrap').classList.add('shrink'); }, 1500);
+  setTimeout(function(){ document.getElementById('gateRule').classList.add('show'); }, 2300);
+  setTimeout(function(){ document.getElementById('gateTagline').classList.add('show'); }, 2500);
+  setTimeout(function(){ document.getElementById('gateHint').classList.add('show'); }, 2650);
+  setTimeout(function(){
+    document.getElementById('gateForm').classList.add('show');
+    document.getElementById('pw-input').focus();
+  }, 2800);
+}
+startGate();
+
 function tryLogin(){
   const val = document.getElementById('pw-input').value;
   if (val === PASSWORD_MASTER || val === PASSWORD_REGULAR){
     isMaster = (val === PASSWORD_MASTER);
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('main-app').classList.remove('hidden');
-    document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
-    initDashboard();
+    const gate = document.getElementById('login-screen');
+    gate.style.transition = 'opacity 0.6s ease';
+    gate.style.opacity = '0';
+    setTimeout(() => {
+      gate.style.display = 'none';
+      document.getElementById('main-app').classList.remove('hidden');
+      document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
+      initDashboard();
+    }, 600);
   } else {
-    const card = document.querySelector('.login-card');
-    card.classList.add('shake');
+    const input = document.getElementById('pw-input');
+    input.classList.add('error');
     document.getElementById('login-error').textContent = 'Incorrect password';
-    setTimeout(()=>card.classList.remove('shake'), 350);
+    setTimeout(() => { input.classList.remove('error'); input.value = ''; }, 900);
   }
 }
-document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 
 // =========================================================
 // TOAST
