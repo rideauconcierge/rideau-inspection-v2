@@ -40,7 +40,7 @@
   .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);}
 
   #login-screen{position:fixed;inset:0;z-index:130;}
-  .gate-content{position:fixed;top:46%;left:50%;
+  .gate-content{position:fixed;left:50%;
     transform:translateX(-50%) translateY(10px);
     text-align:center;padding:20px;width:100%;max-width:380px;box-sizing:border-box;
     opacity:0;transition:opacity .4s ease, transform .4s ease;}
@@ -272,11 +272,20 @@ function startGate(){
   const logo = document.getElementById('siteLogo');
   const content = document.getElementById('gateContent');
 
+  positionContentBelowLogo();
+  window.addEventListener('resize', positionContentBelowLogo);
+
   setTimeout(function(){ logo.classList.add('visible'); }, 150);   // fade/unblur in place, stays large
   setTimeout(function(){
     content.classList.add('show');
     document.getElementById('pw-input').focus();
   }, 1000);
+}
+function positionContentBelowLogo(){
+  const logo = document.getElementById('siteLogo');
+  const content = document.getElementById('gateContent');
+  const rect = logo.getBoundingClientRect();
+  content.style.top = (rect.bottom + 22) + 'px';
 }
 startGate();
 
