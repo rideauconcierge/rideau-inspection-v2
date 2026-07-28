@@ -738,11 +738,11 @@ function startGate(){
 
   setTimeout(function(){ logo.classList.add('visible'); }, 100);     // fade/unblur in place, still large & centered
   setTimeout(function(){ logo.classList.add('docked'); }, 650);      // floats up + shrinks to its resting spot
-  setTimeout(function(){ backdrop.style.opacity = '0'; }, 1550);     // backdrop clears once logo has landed
-  setTimeout(function(){
-    backdrop.style.display = 'none';
-    page.classList.add('show');                                     // page content reveals under the docked logo
-  }, 2150);
+  setTimeout(function(){                                             // fires the instant dock motion (0.85s) finishes
+    backdrop.style.opacity = '0';
+    page.classList.add('show');                                     // page content reveals immediately, no extra wait
+    setTimeout(function(){ backdrop.style.display = 'none'; }, 600);
+  }, 1500);
 }
 startGate();
 </script>
