@@ -23,27 +23,28 @@
     color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
   .hidden{display:none !important;}
 
-  /* ---- SINGLE PERSISTENT LOGO: floats from center-screen to a docked
-     top position and stays there through login and into the dashboard. ---- */
-  #siteLogo{position:fixed;z-index:150;top:50%;left:50%;
+  /* ---- SINGLE PERSISTENT LOGO: stays large through the whole login
+     screen, only docks to its small header spot on a correct password. ---- */
+  #siteLogo{position:fixed;z-index:150;top:22%;left:50%;
     transform:translate(-50%,-50%);width:min(46vw,170px);
     opacity:0;filter:blur(10px);
-    transition:top .85s cubic-bezier(0.16,1,0.3,1), transform .85s cubic-bezier(0.16,1,0.3,1),
-      width .85s cubic-bezier(0.16,1,0.3,1), opacity .5s ease, filter .5s ease;}
+    transition:top 1.2s cubic-bezier(0.16,1,0.3,1), transform 1.2s cubic-bezier(0.16,1,0.3,1),
+      width 1.2s cubic-bezier(0.16,1,0.3,1), opacity .9s ease, filter .9s ease;}
   #siteLogo.visible{opacity:1;filter:drop-shadow(0 0 30px rgba(201,160,74,0.4)) drop-shadow(0 0 60px rgba(201,160,74,0.15));}
   #siteLogo.docked{top:26px;transform:translate(-50%,0);width:50px;
     filter:drop-shadow(0 4px 14px rgba(201,160,74,0.3));}
 
   #gateBackdrop{position:fixed;inset:0;z-index:120;background:var(--navy-deep);
     background-image:radial-gradient(circle at 50% 30%, rgba(201,160,74,0.10), transparent 55%);
-    transition:opacity .6s ease;}
+    transition:opacity .4s ease;}
   .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);}
 
-  #login-screen{position:fixed;inset:0;z-index:130;display:flex;align-items:flex-start;justify-content:center;
-    padding-top:110px;}
-  .gate-content{position:relative;text-align:center;padding:20px;width:100%;max-width:380px;
-    opacity:0;transform:translateY(10px);transition:opacity .6s ease, transform .6s ease;}
-  .gate-content.show{opacity:1;transform:translateY(0);}
+  #login-screen{position:fixed;inset:0;z-index:130;}
+  .gate-content{position:fixed;top:46%;left:50%;
+    transform:translateX(-50%) translateY(10px);
+    text-align:center;padding:20px;width:100%;max-width:380px;box-sizing:border-box;
+    opacity:0;transition:opacity .4s ease, transform .4s ease;}
+  .gate-content.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .gate-tagline{font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--text);line-height:1.4;
     letter-spacing:0.3px;}
   .gate-hint{font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;
@@ -263,21 +264,19 @@ const ROOM_LABELS = {
 };
 
 // =========================================================
-// LOGIN GATE: logo floats up and docks first, THEN the password
-// card reveals underneath it. On success, only the backdrop and
-// password card fade away - the logo never moves again.
+// LOGIN GATE: logo appears large and STAYS large - the password
+// card fades in below it. The logo only shrinks and docks into
+// its header spot at the moment the password is correct.
 // =========================================================
 function startGate(){
   const logo = document.getElementById('siteLogo');
-  const backdrop = document.getElementById('gateBackdrop');
   const content = document.getElementById('gateContent');
 
-  setTimeout(function(){ logo.classList.add('visible'); }, 100);
-  setTimeout(function(){ logo.classList.add('docked'); }, 650);
-  setTimeout(function(){                              // fires the instant the dock motion (0.85s) finishes
+  setTimeout(function(){ logo.classList.add('visible'); }, 150);   // fade/unblur in place, stays large
+  setTimeout(function(){
     content.classList.add('show');
     document.getElementById('pw-input').focus();
-  }, 1500);
+  }, 1000);
 }
 startGate();
 
@@ -287,9 +286,11 @@ function tryLogin(){
     isMaster = (val === PASSWORD_MASTER);
     const backdrop = document.getElementById('gateBackdrop');
     const gate = document.getElementById('login-screen');
+    const logo = document.getElementById('siteLogo');
 
+    logo.classList.add('docked');           // shrink + float up into the header spot, right now
     backdrop.style.opacity = '0';
-    gate.style.transition = 'opacity 0.4s ease';
+    gate.style.transition = 'opacity 0.35s ease';
     gate.style.opacity = '0';
 
     document.getElementById('main-app').classList.remove('hidden');
@@ -299,7 +300,7 @@ function tryLogin(){
     setTimeout(() => {
       backdrop.style.display = 'none';
       gate.style.display = 'none';
-    }, 500);
+    }, 900);                                // give the 1.2s dock transition time to land before fully hiding the gate
   } else {
     const input = document.getElementById('pw-input');
     input.classList.add('error');
