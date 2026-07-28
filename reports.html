@@ -3,28 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Rideau — Inspection Reports</title>
+<title>The Rideau — Amenity Inspections</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy-deep:#0b1826; --navy:#132a3e; --navy-light:#1c3a53; --navy-card:#17324a;
-    --gold:#c9a04a; --gold-bright:#e0bc6b;
-    --text:#eae6dc; --text-muted:#8fa1b3;
-    --ok:#5c9c7c; --ok-bg:rgba(92,156,124,0.16);
-    --warn:#c96a52; --warn-bg:rgba(201,106,82,0.16);
-    --pre-color:#c9a04a; --post-color:#5c8ea3;
-    --border:rgba(201,160,74,0.22); --radius:10px;
+    --navy-deep:#0b1826;
+    --navy:#132a3e;
+    --navy-light:#1c3a53;
+    --navy-card:#17324a;
+    --gold:#c9a04a;
+    --gold-bright:#e0bc6b;
+    --text:#eae6dc;
+    --text-muted:#8fa1b3;
+    --ok:#5c9c7c;
+    --ok-bg:rgba(92,156,124,0.16);
+    --warn:#c96a52;
+    --warn-bg:rgba(201,106,82,0.16);
+    --border:rgba(201,160,74,0.22);
+    --radius:10px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--navy-deep);
-    background-image:radial-gradient(circle at 15% 0%, rgba(201,160,74,0.06), transparent 45%),
-                      radial-gradient(circle at 90% 10%, rgba(201,160,74,0.04), transparent 40%);
-    color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
-  .hidden{display:none !important;}
+  body{
+    margin:0;
+    background:var(--navy-deep);
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(201,160,74,0.06), transparent 45%),
+      radial-gradient(circle at 90% 10%, rgba(201,160,74,0.04), transparent 40%);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+  header.top{text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+  .eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;font-weight:600;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin:0;letter-spacing:0.01em;}
+  .sub{color:var(--text-muted);font-size:13px;margin-top:6px;}
+
+  .room-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:480px){.room-grid{grid-template-columns:1fr;}}
+  .room-card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 16px;cursor:pointer;transition:border-color .15s, transform .15s;text-align:left;}
+  .room-card:hover{border-color:var(--gold);transform:translateY(-2px);}
+  .room-card .rc-label{font-family:'Fraunces',serif;font-size:17px;font-weight:600;}
+  .room-card .rc-meta{color:var(--text-muted);font-size:12px;margin-top:4px;}
+
+  .choice-row{display:flex;gap:14px;flex-direction:column;}
+  .choice-card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+  .choice-card:hover{border-color:var(--gold);}
+  .choice-card .cc-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;}
+  .choice-card .cc-desc{color:var(--text-muted);font-size:12.5px;margin-top:3px;}
+  .choice-card .cc-arrow{color:var(--gold);font-size:20px;}
+
+  .backbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .backbtn{background:none;border:1px solid var(--border);color:var(--text-muted);padding:6px 12px;border-radius:6px;font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .backbtn:hover{border-color:var(--gold);color:var(--gold);}
+  .crumb{color:var(--text-muted);font-size:12.5px;}
+  .crumb b{color:var(--gold-bright);font-weight:600;}
+
+  /* progress */
+  .progress-wrap{margin-bottom:20px;}
+  .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .progress-label span.count{color:var(--gold-bright);font-weight:600;}
+  .progress-track{height:6px;background:var(--navy);border-radius:4px;overflow:hidden;border:1px solid var(--border);}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));border-radius:4px;transition:width .25s ease;width:0%;}
+
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+  @media (max-width:480px){.field-grid{grid-template-columns:1fr;}}
+  .field label{display:block;font-size:11.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+  .field input, .field textarea{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:10px 11px;border-radius:7px;font-size:14px;font-family:'Inter',sans-serif;}
+  .field input:focus, .field textarea:focus{outline:none;border-color:var(--gold);}
+  .unit-suggestions{position:absolute;top:100%;left:0;right:0;background:var(--navy);
+    border:1px solid var(--gold);border-radius:7px;margin-top:4px;max-height:190px;
+    overflow-y:auto;z-index:20;display:none;box-shadow:0 8px 20px rgba(0,0,0,0.35);}
+  .unit-suggestions.show{display:block;}
+  .us-item{padding:9px 13px;font-size:13.5px;cursor:pointer;border-bottom:1px solid rgba(201,160,74,0.08);}
+  .us-item:last-child{border-bottom:none;}
+  .us-item:hover, .us-item.highlight{background:var(--navy-light);color:var(--gold-bright);}
+
+  /* group cards */
+  .group{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;}
+  .group-head{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .group-icon{font-size:17px;line-height:1;}
+  .group-title{font-family:'Fraunces',serif;font-size:15px;font-weight:600;color:var(--gold-bright);flex:1;}
+  .group-count{font-size:10.5px;color:var(--text-muted);background:var(--navy);border:1px solid var(--border);padding:2px 8px;border-radius:10px;}
+
+  .item{padding:12px 16px;border-bottom:1px solid rgba(201,160,74,0.09);}
+  .item:last-child{border-bottom:none;}
+  .item-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .item-name{font-size:13.5px;line-height:1.35;flex:1;min-width:140px;}
+  .item-controls{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+
+  .pill{padding:8px 16px;border-radius:20px;border:1.5px solid rgba(201,160,74,0.45);background:var(--navy-light);
+    font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;transition:all .12s;
+    font-family:'Inter',sans-serif;white-space:nowrap;}
+  .pill:hover{border-color:var(--gold-bright);background:var(--navy-card);}
+  .pill.ok.active{background:var(--ok);border-color:var(--ok);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px var(--ok-bg);}
+  .pill.issue.active{background:var(--warn);border-color:var(--warn);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px var(--warn-bg);}
+  .pill.select.active{background:var(--gold);border-color:var(--gold);color:#0b1826;font-weight:700;
+    box-shadow:0 0 0 3px rgba(201,160,74,0.25);}
+
+  .qty-badge{background:var(--navy);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--text-muted);margin-right:2px;}
+  .id-input{width:88px;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:6px;font-size:12px;}
+
+  .issue-note{margin-top:9px;display:none;}
+  .issue-note.show{display:block;}
+  .issue-note input{width:100%;background:var(--navy-deep);border:1px solid var(--warn);color:var(--text);padding:8px 10px;border-radius:6px;font-size:12.5px;}
+  .issue-note input::placeholder{color:var(--text-muted);}
+
+  /* flagged summary */
+  .flagged-panel{background:var(--warn-bg);border:1px solid var(--warn);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;display:none;}
+  .flagged-panel.show{display:block;}
+  .flagged-title{font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:var(--warn);margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+  .flagged-list{list-style:none;margin:0;padding:0;font-size:12.5px;}
+  .flagged-list li{padding:5px 0;border-bottom:1px solid rgba(201,106,82,0.2);color:var(--text);}
+  .flagged-list li:last-child{border-bottom:none;}
+  .flagged-list li .fl-note{color:var(--text-muted);font-style:italic;}
+
+  .photo-section{background:var(--navy-card);border:1px dashed var(--border);border-radius:var(--radius);padding:22px;text-align:center;margin-bottom:16px;}
+  .photo-section .ph-icon{font-size:22px;margin-bottom:6px;}
+  .photo-section .ph-text{color:var(--text-muted);font-size:12.5px;}
+  .photo-upload-btn{margin-top:12px;background:transparent;border:1px solid var(--gold);color:var(--gold-bright);padding:8px 18px;border-radius:7px;font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;}
+
+  .submit-btn{width:100%;background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);border:none;padding:15px;border-radius:9px;font-size:14.5px;font-weight:700;cursor:pointer;letter-spacing:.02em;font-family:'Inter',sans-serif;margin-top:6px;}
+  .submit-btn:hover{filter:brightness(1.08);}
+  .submit-btn:disabled{opacity:0.6;cursor:default;}
+  .watermark{text-align:center;color:var(--text-muted);font-size:10px;margin-top:26px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy-card);border:1px solid var(--gold);color:var(--gold-bright);padding:12px 22px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;max-width:90vw;text-align:center;}
+  .toast.show{opacity:1;bottom:32px;}
 
   /* ---- SINGLE PERSISTENT LOGO: floats from center-screen to a docked
-     top position and stays there through login and into the dashboard. ---- */
+     top position and stays there. Page content is hidden until it lands. ---- */
   #siteLogo{position:fixed;z-index:150;top:50%;left:50%;
     transform:translate(-50%,-50%);width:min(46vw,170px);
     opacity:0;filter:blur(10px);
@@ -39,651 +151,409 @@
     transition:opacity .8s ease;}
   .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);}
 
-  #login-screen{position:fixed;inset:0;z-index:130;display:flex;align-items:center;justify-content:center;
-    padding-top:70px;}
-  .gate-content{position:relative;text-align:center;padding:20px;width:100%;max-width:380px;
-    opacity:0;transform:translateY(10px);transition:opacity .8s ease, transform .8s ease;}
-  .gate-content.show{opacity:1;transform:translateY(0);}
-  .gate-tagline{font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--text);line-height:1.4;
-    letter-spacing:0.3px;}
-  .gate-hint{font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;
-    margin-top:8px;margin-bottom:24px;}
-  .gate-form{}
-  .gate-input{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);
-    padding:13px 18px;border-radius:10px;font-size:16px;text-align:center;letter-spacing:0.3em;
-    outline:none;font-family:'Inter',sans-serif;transition:border-color .2s,box-shadow .2s;box-sizing:border-box;}
-  .gate-input:focus{border-color:var(--gold);box-shadow:0 0 20px rgba(201,160,74,0.25);}
-  .gate-input.error{border-color:var(--warn);box-shadow:0 0 20px rgba(201,106,82,0.25);animation:gateShake .4s ease;}
-  .gate-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);
-    border:none;padding:13px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:0.05em;
-    cursor:pointer;font-family:'Inter',sans-serif;transition:filter .2s,transform .1s;}
-  .gate-btn:hover{filter:brightness(1.08);}
-  .gate-btn:active{transform:scale(0.98);}
-  .gate-error{color:var(--warn);font-size:12px;margin-top:10px;min-height:16px;}
-  .gate-watermark{position:absolute;bottom:22px;left:0;right:0;text-align:center;font-size:10px;
-    color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;opacity:0.6;}
-  .gate-watermark span{color:var(--gold-bright);}
-  @keyframes gateShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
-
-  /* ---- MAIN APP ---- */
-  #main-app{max-width:1100px;margin:0 auto;padding:22px 16px 70px;}
-  header.top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;
-    border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:20px;}
-  .eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:4px;}
-  h1{font-family:'Fraunces',serif;font-weight:600;font-size:24px;margin:0;}
-  .clock{text-align:right;color:var(--text-muted);font-size:12px;}
-  .clock .time{font-family:'Fraunces',serif;color:var(--gold-bright);font-size:16px;}
-
-  /* filter tabs */
-  .tab-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
-  .tab{background:var(--navy-light);border:1.5px solid rgba(201,160,74,0.4);color:var(--text);
-    padding:8px 18px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .12s;}
-  .tab:hover{border-color:var(--gold-bright);background:var(--navy-card);}
-  .tab.active{background:var(--gold);border-color:var(--gold);color:var(--navy-deep);font-weight:700;
-    box-shadow:0 0 0 3px rgba(201,160,74,0.25);}
-
-  .master-banner{display:inline-block;margin-top:8px;background:var(--warn);color:#1a0a05;font-size:11px;
-    font-weight:800;letter-spacing:.06em;padding:5px 14px;border-radius:12px;text-transform:uppercase;}
-
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy-card);
-    border:1px solid var(--gold);color:var(--gold-bright);padding:12px 22px;border-radius:8px;font-size:13px;
-    opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;max-width:90vw;text-align:center;z-index:200;}
-  .toast.show{opacity:1;bottom:32px;}
-
-  .filter-panel{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);
-    padding:14px 16px;margin-bottom:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
-  .filter-panel select, .filter-panel input{background:var(--navy);border:1px solid var(--border);color:var(--text);
-    padding:8px 12px;border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;}
-  .filter-panel select:focus, .filter-panel input:focus{outline:none;border-color:var(--gold);}
-  .clear-btn{background:none;border:1px solid var(--border);color:var(--text-muted);padding:8px 14px;
-    border-radius:7px;font-size:12px;cursor:pointer;}
-  .clear-btn:hover{border-color:var(--warn);color:var(--warn);}
-
-  .result-meta{color:var(--text-muted);font-size:12px;margin-bottom:14px;}
-  .result-meta b{color:var(--gold-bright);}
-
-  /* card grid */
-  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;}
-  .rcard{background:var(--navy-card);border:1px solid var(--border);border-left:4px solid var(--gold);
-    border-radius:var(--radius);padding:15px 16px;cursor:pointer;transition:transform .12s,border-color .12s;}
-  .rcard:hover{transform:translateY(-2px);border-color:var(--gold);}
-  .rcard.post-mode{border-left-color:var(--post-color);}
-  .rcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
-  .rcard-room{font-family:'Fraunces',serif;font-size:15.5px;font-weight:600;}
-  .mode-badge{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:10px;font-weight:700;}
-  .mode-badge.pre{background:rgba(201,160,74,0.18);color:var(--gold-bright);}
-  .mode-badge.post{background:rgba(92,142,163,0.2);color:#8bb8cf;}
-  .rcard-meta{font-size:12px;color:var(--text-muted);line-height:1.7;}
-  .rcard-meta b{color:var(--text);font-weight:500;}
-  .rcard-flags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;}
-  .flag-badge{font-size:10.5px;padding:3px 9px;border-radius:10px;font-weight:600;}
-  .flag-issue{background:var(--warn-bg);color:var(--warn);}
-  .flag-photo{background:rgba(201,160,74,0.12);color:var(--gold-bright);}
-
-  .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
-  .empty-state .es-icon{font-size:32px;margin-bottom:10px;}
-
-  /* detail modal */
-  #detail-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.75);z-index:90;
-    display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;}
-  .detail-panel{background:var(--navy-deep);border:1px solid var(--border);border-radius:14px;
-    max-width:640px;width:100%;padding:26px 24px 30px;position:relative;}
-  .detail-close{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--text-muted);
-    font-size:20px;cursor:pointer;}
-  .detail-close:hover{color:var(--gold);}
-  .detail-head{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);}
-  .detail-head h2{font-family:'Fraunces',serif;font-size:20px;margin:0 0 4px;}
-  .detail-head .dh-meta{color:var(--text-muted);font-size:12.5px;}
-
-  .mode-toggle{display:flex;gap:8px;margin-bottom:14px;}
-  .mode-toggle button{flex:1;padding:10px;border-radius:8px;border:1.5px solid rgba(201,160,74,0.4);background:var(--navy-light);
-    color:var(--text);cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;}
-  .mode-toggle button.active{border-color:var(--gold);color:#0b1826;background:var(--gold);font-weight:700;}
-  .mode-toggle button:disabled{opacity:0.35;cursor:not-allowed;}
-
-  .action-row{display:flex;gap:8px;margin-bottom:16px;}
-  .edit-btn{flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--gold);background:rgba(201,160,74,0.14);
-    color:var(--gold-bright);cursor:pointer;font-weight:700;font-size:12.5px;font-family:'Inter',sans-serif;}
-  .edit-btn:hover{background:rgba(201,160,74,0.22);}
-  .cancel-btn{flex:1;padding:11px;border-radius:8px;border:1.5px solid var(--border);background:var(--navy);
-    color:var(--text-muted);cursor:pointer;font-weight:600;font-family:'Inter',sans-serif;}
-  .save-btn{flex:2;padding:11px;border-radius:8px;border:none;
-    background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);cursor:pointer;
-    font-weight:700;font-family:'Inter',sans-serif;}
-  .save-btn:disabled{opacity:0.6;cursor:default;}
-
-  /* editable items (edit mode reuses the same look as the form) */
-  .item{padding:10px 0;border-bottom:1px solid rgba(201,160,74,0.09);}
-  .item:last-child{border-bottom:none;}
-  .item-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-  .item-name{font-size:13px;line-height:1.35;flex:1;min-width:130px;}
-  .item-controls{display:flex;gap:8px;align-items:center;flex-shrink:0;}
-  .pill{padding:7px 14px;border-radius:20px;border:1.5px solid rgba(201,160,74,0.45);background:var(--navy-light);
-    font-size:12px;font-weight:600;color:var(--text);cursor:pointer;transition:all .12s;
-    font-family:'Inter',sans-serif;white-space:nowrap;}
-  .pill:hover{border-color:var(--gold-bright);background:var(--navy-card);}
-  .pill.ok.active{background:var(--ok);border-color:var(--ok);color:#0b1826;font-weight:700;
-    box-shadow:0 0 0 3px var(--ok-bg);}
-  .pill.issue.active{background:var(--warn);border-color:var(--warn);color:#0b1826;font-weight:700;
-    box-shadow:0 0 0 3px var(--warn-bg);}
-  .pill.select.active{background:var(--gold);border-color:var(--gold);color:#0b1826;font-weight:700;
-    box-shadow:0 0 0 3px rgba(201,160,74,0.25);}
-  .qty-badge{background:var(--navy);border:1px solid var(--border);border-radius:5px;padding:3px 8px;
-    font-size:10.5px;color:var(--text-muted);}
-  .id-input{width:80px;background:var(--navy);border:1px solid var(--border);color:var(--text);
-    padding:6px 8px;border-radius:6px;font-size:11.5px;}
-  .issue-note{margin-top:8px;display:none;}
-  .issue-note.show{display:block;}
-  .issue-note input{width:100%;background:var(--navy-deep);border:1px solid var(--warn);color:var(--text);
-    padding:8px 10px;border-radius:6px;font-size:12px;}
-
-  .edit-history{max-height:220px;overflow-y:auto;}
-  .eh-entry{background:var(--navy-card);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:6px;font-size:12px;}
-  .eh-time{color:var(--gold-bright);font-weight:600;margin-bottom:3px;}
-  .eh-summary{color:var(--text-muted);word-break:break-word;}
-
-  .dgroup{margin-bottom:14px;}
-  .dgroup-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold-bright);margin-bottom:7px;font-weight:600;}
-  .ditem{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(201,160,74,0.08);font-size:13px;gap:10px;}
-  .ditem:last-child{border-bottom:none;}
-  .ditem-name{flex:1;}
-  .ditem-status{font-size:11px;padding:3px 9px;border-radius:10px;font-weight:600;white-space:nowrap;}
-  .status-ok{background:var(--ok-bg);color:var(--ok);}
-  .status-issue{background:var(--warn-bg);color:var(--warn);}
-  .status-neutral{background:var(--navy);color:var(--text-muted);}
-  .status-select{background:rgba(201,160,74,0.16);color:var(--gold-bright);}
-  .ditem-note{font-size:11.5px;color:var(--warn);font-style:italic;margin-top:2px;width:100%;}
-
-  .dcomments{background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;
-    font-size:13px;color:var(--text);margin-top:8px;}
-  .dphotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:8px;}
-  .dphotos a img{width:100%;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);}
-
-  .refresh-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:5px;
-    animation:pulse 2s infinite;}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-
-  .watermark{text-align:center;color:var(--text-muted);font-size:10px;margin-top:30px;letter-spacing:.05em;
-    text-transform:uppercase;opacity:0.6;}
+  #pageWrap{opacity:0;transform:translateY(14px);transition:opacity .8s ease, transform .8s ease;
+    padding-top:56px;}
+  #pageWrap.show{opacity:1;transform:translateY(0);}
 </style>
 </head>
 <body>
-
 <img id="siteLogo" src="logo.png" alt="The Rideau">
 <div id="gateBackdrop"><div class="gate-vignette"></div></div>
-
-<div id="login-screen">
-  <div class="gate-content" id="gateContent">
-    <div class="gate-tagline" id="gateTagline">Inspection Reports</div>
-    <div class="gate-hint" id="gateHint">ENTER PASSWORD TO CONTINUE</div>
-    <div class="gate-form" id="gateForm">
-      <input class="gate-input" type="password" id="pw-input" placeholder="••••••••" maxlength="20" autocomplete="off" onkeydown="if(event.key==='Enter')tryLogin()">
-      <button class="gate-btn" onclick="tryLogin()">ENTER</button>
-      <div class="gate-error" id="login-error"></div>
-    </div>
-  </div>
-  <div class="gate-watermark">Designed by <span>Shrutik</span></div>
-</div>
-
-<div id="main-app" class="hidden">
+<div class="wrap" id="pageWrap">
   <header class="top">
-    <div>
-      <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
-      <h1>Inspection Reports</h1>
-      <div id="master-banner" class="master-banner hidden">🔑 MASTER REPORT</div>
-      <div style="margin-top:10px;"><a href="index.html" style="color:var(--gold);font-size:11.5px;text-decoration:none;border:1px solid var(--border);padding:5px 14px;border-radius:14px;">&larr; New Inspection</a></div>
-    </div>
-    <div class="clock">
-      <div><span class="refresh-dot"></span>Live</div>
-      <div class="time" id="clock-time">--:--</div>
-      <div id="clock-date"></div>
-    </div>
+    <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
+    <h1>Amenity Inspections</h1>
+    <div class="sub">Select a room to begin</div>
+    <div style="margin-top:10px;"><a href="reports.html" style="color:var(--gold);font-size:11.5px;text-decoration:none;border:1px solid var(--border);padding:5px 14px;border-radius:14px;">View Reports &rarr;</a></div>
   </header>
-
-  <div class="tab-row" id="tab-row"></div>
-  <div class="filter-panel" id="filter-panel"></div>
-  <div class="result-meta" id="result-meta"></div>
-  <div class="card-grid" id="card-grid"></div>
-
+  <div id="app"></div>
   <div class="watermark">Designed by Shrutik</div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz-69e-XALVtmU1bJ2WpPpUbs39KVniUmsxNzDkxlH8LxErxg7qEWlytviprtTAJvL6xQ/exec";
-const PASSWORD_REGULAR = "12345";
-const PASSWORD_MASTER = "S12345";
-let isMaster = false;
-const ROOM_LABELS = {
-  canal_lounge: "Canal Lounge & Patio",
-  guest_suite: "Guest Suite",
-  stadium_box: "Stadium Box",
-  stadium_kitchen: "Stadium Kitchen",
-  stadium_lounge: "Stadium Lounge"
+
+// =========================================================
+// CONFIG
+// Each item has its own "kind" so the control it gets actually
+// matches what needs recording — a task item never gets a stock
+// checkbox, a supply item never gets a Locked toggle, etc.
+//
+// kind: "task"      -> single "Done" pill
+//       "condition" -> "Clean"/okLabel + "Issue" pill pair, with inline note when flagged
+//       "security"  -> "Locked"/okLabel + "Issue" pill pair, with inline note when flagged
+//       "supply"    -> single "Restocked" pill, reference qty shown alongside
+//       "collect"   -> Pre: pick a fob number (if applicable) + "Provided" pill
+//                      Post: "Returned" pill only. Never shows both in the same visit.
+// =========================================================
+const ROOMS = {
+  canal_lounge: {
+    label: "Canal Lounge & Patio",
+    meta: "Tables, patio, BBQ, key",
+    groups: [
+      { title:"Collect & Return", icon:"🔑", kind:"collect",
+        items:[{name:"Physical Key"}] },
+      { title:"Furniture & Fixtures", icon:"🪑", kind:"condition",
+        items:["Tables / Chairs","Doors / Flooring","Lights / Walls"] },
+      { title:"Appliances", icon:"🔌", kind:"condition",
+        items:[{name:"Dishwasher / Fridge", okLabel:"Clean & Empty"},"Range / Microwave / Wine Cooler","TV / Remote / Cable Box"] },
+      { title:"Outdoor & BBQ", icon:"🔥", kind:"condition", okLabel:"Put Away",
+        items:["BBQs / Utensils","Patio Furniture / Cushions"] },
+      { title:"Cleaning Supplies", icon:"🧴", kind:"supply",
+        items:[{name:"Paper Towel",qty:2},{name:"Cloth",qty:1},{name:"Multi-Purpose Cleaner",qty:1},{name:"Magic Erasers",qty:2}] }
+    ]
+  },
+  guest_suite: {
+    label: "Guest Suite",
+    meta: "Bedroom, bathroom, kitchenette",
+    groups: [
+      { title:"Reset Tasks", icon:"🧹", kind:"task",
+        items:["Floor Vacuumed","Garbage Bins Emptied (Cabinet next to Mini Fridge & Bathroom)"] },
+      { title:"Room & Bathroom Condition", icon:"🛏️", kind:"condition",
+        items:["Chairs, TV, Remote, Desk, Bed Frame, Side Table, Lamps, Mini Fridge and Mirror","Bathroom Surfaces (Tub, Shower, Sink, Toilet, Floor, and Mirror)"] },
+      { title:"Restock", icon:"🧴", kind:"supply",
+        items:[{name:"Teas, Coffee, Sugar, Cups, Sweetener, Spoon/Stir Sticks"},{name:"Facial & Toilet Tissues and Hand Soap"},{name:"Wash Cloths, Hand Towels, Bath Towels",qty:3},{name:"Bath Mat",qty:1}] }
+    ]
+  },
+  stadium_box: {
+    label: "Stadium Box",
+    meta: "Ping pong, darts, fob",
+    groups: [
+      { title:"Collect & Return", icon:"🔑", kind:"collect",
+        items:[{name:"Access Fob #",withId:true},{name:"Physical Key"},{name:"Ping Pong & Darts Equipment"}] },
+      { title:"Room Condition", icon:"🏓", kind:"condition",
+        items:["Door / Flooring","Lights / Walls","TV / Remote / Cable Box","Ping Pong Table / Dart Board","Hand Sanitizer Station","Tables / Chairs"] },
+      { title:"Security", icon:"🔒", kind:"security",
+        items:["Sliding Doors"] },
+      { title:"Cleaning Supplies", icon:"🧴", kind:"supply",
+        items:[{name:"Paper Towel",qty:1},{name:"Cloth",qty:2},{name:"Multi-Purpose Cleaner",qty:1},{name:"Magic Erasers",qty:2}] }
+    ]
+  },
+  stadium_kitchen: {
+    label: "Stadium Kitchen",
+    meta: "Appliances, glassware, fob",
+    groups: [
+      { title:"Collect & Return", icon:"🔑", kind:"collect",
+        items:[{name:"Access Fob #",withId:true},{name:"Physical Key"}] },
+      { title:"Kitchen Condition", icon:"🍽️", kind:"condition",
+        items:["Table / Chairs / Door / Flooring / Lights / Walls","Dishwasher / Fridge / Coffee Maker / Other Appliances","Glassware / Dishes / Cups"] },
+      { title:"Restock", icon:"🧴", kind:"supply",
+        items:[{name:"Coffee / Tea / Sugar (Replenish as needed)"}] },
+      { title:"Security", icon:"🔒", kind:"security",
+        items:["Sliding Door","Cupboard / Drawers"] }
+    ]
+  },
+  stadium_lounge: {
+    label: "Stadium Lounge",
+    meta: "Fireplace, sofas, fob",
+    groups: [
+      { title:"Collect & Return", icon:"🔑", kind:"collect",
+        items:[{name:"Access Fob #",withId:true},{name:"Physical Key"}] },
+      { title:"Room Condition", icon:"🛋️", kind:"condition",
+        items:["Tables / Chairs","Doors / Flooring","Lights / Walls","Mini Fridge / Closet","Fire Place","Sofas / Pillows"] },
+      { title:"Security", icon:"🔒", kind:"security",
+        items:["Sliding Door"] },
+      { title:"Cleaning Supplies", icon:"🧴", kind:"supply",
+        items:[{name:"Paper Towel",qty:2},{name:"Cloth",qty:1},{name:"Multi-Purpose Cleaner",qty:1},{name:"Magic Erasers",qty:2}] }
+    ]
+  }
 };
 
 // =========================================================
-// LOGIN GATE: logo floats up and docks first, THEN the password
-// card reveals underneath it. On success, only the backdrop and
-// password card fade away - the logo never moves again.
+// UNIT NUMBER LIST — the building's actual valid units.
+// TH1-TH10, then 201-204, then 9-unit floors 3-16, then
+// 4-unit floors 17-20. Generated once, not hardcoded, so it
+// stays right if a floor's range ever needs adjusting.
 // =========================================================
-function startGate(){
-  const logo = document.getElementById('siteLogo');
-  const backdrop = document.getElementById('gateBackdrop');
-  const content = document.getElementById('gateContent');
-
-  setTimeout(function(){ logo.classList.add('visible'); }, 150);
-  setTimeout(function(){ logo.classList.add('docked'); }, 1400);
-  setTimeout(function(){
-    content.classList.add('show');
-    document.getElementById('pw-input').focus();
-  }, 2500);
-}
-startGate();
-
-function tryLogin(){
-  const val = document.getElementById('pw-input').value;
-  if (val === PASSWORD_MASTER || val === PASSWORD_REGULAR){
-    isMaster = (val === PASSWORD_MASTER);
-    const backdrop = document.getElementById('gateBackdrop');
-    const gate = document.getElementById('login-screen');
-
-    backdrop.style.opacity = '0';
-    gate.style.transition = 'opacity 0.4s ease';
-    gate.style.opacity = '0';
-
-    document.getElementById('main-app').classList.remove('hidden');
-    document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
-    initDashboard();
-
-    setTimeout(() => {
-      backdrop.style.display = 'none';
-      gate.style.display = 'none';
-    }, 500);
-  } else {
-    const input = document.getElementById('pw-input');
-    input.classList.add('error');
-    document.getElementById('login-error').textContent = 'Incorrect password';
-    setTimeout(() => { input.classList.remove('error'); input.value = ''; }, 900);
+function generateUnitList(){
+  const units = [];
+  for (let i=1; i<=10; i++) units.push('TH'+i);
+  for (let u=201; u<=204; u++) units.push(String(u));
+  for (let f=3; f<=16; f++){
+    for (let u=1; u<=9; u++) units.push(String(f*100+u));
   }
+  for (let f=17; f<=20; f++){
+    for (let u=1; u<=4; u++) units.push(String(f*100+u));
+  }
+  return units;
+}
+const UNIT_LIST = generateUnitList();
+
+function filterUnitSuggestions(input){
+  const val = input.value.trim().toUpperCase();
+  const box = document.getElementById('unit-suggestions');
+  if (!val){ box.innerHTML=''; box.classList.remove('show'); return; }
+  const matches = UNIT_LIST.filter(u => u.startsWith(val)).slice(0, 8);
+  if (!matches.length){ box.innerHTML=''; box.classList.remove('show'); return; }
+  box.innerHTML = matches.map(u => `<div class="us-item" onmousedown="selectUnit('${u}')">${u}</div>`).join('');
+  box.classList.add('show');
+}
+function selectUnit(u){
+  document.getElementById('f-unit').value = u;
+  hideUnitSuggestions();
+}
+function hideUnitSuggestions(){
+  const box = document.getElementById('unit-suggestions');
+  if (box){ box.classList.remove('show'); box.innerHTML=''; }
 }
 
 // =========================================================
-// TOAST
+// STATE + NAV
 // =========================================================
+let state = { room:null, mode:null, photos:[] };
+const app = document.getElementById('app');
+
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2500);
+  setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-// =========================================================
-// CLOCK
-// =========================================================
-function tickClock(){
-  const now = new Date();
-  document.getElementById('clock-time').textContent = now.toLocaleTimeString('en-CA', {hour:'2-digit',minute:'2-digit'});
-  document.getElementById('clock-date').textContent = now.toLocaleDateString('en-CA', {weekday:'short', month:'short', day:'numeric'});
-}
-setInterval(tickClock, 1000);
-tickClock();
-
-// =========================================================
-// STATE
-// =========================================================
-let allData = [];
-let activeTab = 'all';       // all | room | month | date | unit
-let filters = { room:'', month:'', date:'', unit:'' };
-
-async function initDashboard(){
-  buildTabs();
-  buildFilterPanel();
-  await fetchData();
-  setInterval(fetchData, 45000); // silent background refresh
-}
-
-async function fetchData(){
-  try {
-    const res = await fetch(WEB_APP_URL);
-    const json = await res.json();
-    if (json.success){
-      allData = json.data;
-      renderCards();
-    }
-  } catch(err){
-    // silent fail on background refresh - don't disrupt the view
-    console.warn('Refresh failed', err);
-  }
-}
-
-// =========================================================
-// TABS + FILTER PANEL
-// =========================================================
-function buildTabs(){
-  const tabs = [
-    {key:'all', label:'All'},
-    {key:'room', label:'By Room'},
-    {key:'month', label:'By Month'},
-    {key:'date', label:'By Date'},
-    {key:'unit', label:'By Unit'}
-  ];
-  document.getElementById('tab-row').innerHTML = tabs.map(t =>
-    `<button class="tab ${t.key===activeTab?'active':''}" onclick="setTab('${t.key}')">${t.label}</button>`
-  ).join('');
-}
-
-function setTab(key){
-  activeTab = key;
-  filters = { room:'', month:'', date:'', unit:'' };
-  buildTabs();
-  buildFilterPanel();
-  renderCards();
-}
-
-function buildFilterPanel(){
-  const panel = document.getElementById('filter-panel');
-  if (activeTab === 'all'){
-    panel.innerHTML = `<span style="color:var(--text-muted);font-size:12.5px;">Showing every report, most recent first.</span>`;
-    return;
-  }
-  if (activeTab === 'room'){
-    let opts = '<option value="">Select a room...</option>';
-    for (const k in ROOM_LABELS) opts += `<option value="${k}">${ROOM_LABELS[k]}</option>`;
-    panel.innerHTML = `<select onchange="filters.room=this.value; renderCards();">${opts}</select>`;
-  } else if (activeTab === 'month'){
-    panel.innerHTML = `<input type="month" onchange="filters.month=this.value; renderCards();">`;
-  } else if (activeTab === 'date'){
-    panel.innerHTML = `<input type="date" onchange="filters.date=this.value; renderCards();">`;
-  } else if (activeTab === 'unit'){
-    panel.innerHTML = `<input type="text" placeholder="Unit # e.g. 1502" oninput="filters.unit=this.value; renderCards();">`;
-  }
-}
-
-// =========================================================
-// FILTER + RENDER CARDS
-// =========================================================
-function applyFilters(){
-  return allData.filter(r => {
-    if (filters.room && r.Room !== filters.room) return false;
-    if (filters.month && r.Date && !String(r.Date).startsWith(filters.month)) return false;
-    if (filters.date && r.Date && String(r.Date).slice(0,10) !== filters.date) return false;
-    if (filters.unit && !String(r.Unit || '').toLowerCase().includes(filters.unit.toLowerCase())) return false;
-    return true;
-  });
-}
-
-function countIssues(checklist){
-  if (!Array.isArray(checklist)) return 0;
-  let n = 0;
-  checklist.forEach(grp => (grp.items||[]).forEach(it => { if (it.issue) n++; }));
-  return n;
-}
-
-function renderCards(){
-  const data = applyFilters();
-  const grid = document.getElementById('card-grid');
-  const meta = document.getElementById('result-meta');
-  meta.innerHTML = `<b>${data.length}</b> report${data.length===1?'':'s'} found`;
-
-  if (!data.length){
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
-      <div class="es-icon">📋</div>No reports match these filters yet.
+function renderRoomSelect(){
+  state = { room:null, mode:null, photos:[] };
+  document.querySelector('.sub').textContent = "Select a room to begin";
+  let html = '<div class="room-grid">';
+  for (const key in ROOMS){
+    const r = ROOMS[key];
+    html += `<div class="room-card" onclick="selectRoom('${key}')">
+      <div class="rc-label">${r.label}</div>
+      <div class="rc-meta">${r.meta}</div>
     </div>`;
-    return;
   }
-
-  grid.innerHTML = data.map((r, idx) => {
-    const issues = countIssues(r.ChecklistJSON);
-    const photoCount = (r.PhotoURLs||[]).length;
-    return `<div class="rcard ${r.Mode==='post'?'post-mode':''}" onclick="openDetailById('${r.SubmissionID}')">
-      <div class="rcard-top">
-        <div class="rcard-room">${ROOM_LABELS[r.Room] || r.Room}</div>
-        <span class="mode-badge ${r.Mode}">${r.Mode}</span>
-      </div>
-      <div class="rcard-meta">
-        <b>Unit</b> ${r.Unit || '—'}<br>
-        <b>Date</b> ${r.Date || '—'} ${r.Time || ''}<br>
-        <b>Concierge</b> ${r.Concierge || '—'}
-      </div>
-      <div class="rcard-flags">
-        ${issues > 0 ? `<span class="flag-badge flag-issue">⚠ ${issues} issue${issues>1?'s':''}</span>` : ''}
-        ${photoCount > 0 ? `<span class="flag-badge flag-photo">📷 ${photoCount}</span>` : ''}
-      </div>
-    </div>`;
-  }).join('');
+  html += '</div>';
+  app.innerHTML = html;
 }
 
-// =========================================================
-// DETAIL VIEW (with Pre/Post pairing) + EDIT MODE
-// =========================================================
-let detailPair = { pre:null, post:null };
-let detailMode = 'pre';
-let editMode = false;
-let editSourceRecord = null; // deep snapshot of the record when Edit was clicked, for diffing
-
-function openDetailById(submissionId){
-  const record = allData.find(r => r.SubmissionID === submissionId);
-  if (!record){
-    toast('Could not find that report - refreshing...');
-    fetchData();
-    return;
-  }
-  openDetail(record);
+function selectRoom(key){
+  state.room = key;
+  renderModeSelect();
 }
 
-function openDetail(record){
-  const pair = allData.filter(r => r.RecordKey === record.RecordKey);
-  detailPair.pre = pair.find(r => r.Mode === 'pre') || null;
-  detailPair.post = pair.find(r => r.Mode === 'post') || null;
-  detailMode = record.Mode;
-  editMode = false;
-  editSourceRecord = null;
-
-  const overlay = document.createElement('div');
-  overlay.id = 'detail-overlay';
-  overlay.onclick = (e) => { if (e.target.id === 'detail-overlay') closeDetail(); };
-  document.body.appendChild(overlay);
-  renderDetail();
-}
-
-function closeDetail(){
-  const el = document.getElementById('detail-overlay');
-  if (el) el.remove();
-  editMode = false;
-  editSourceRecord = null;
-}
-
-function switchDetailMode(mode){
-  detailMode = mode;
-  editMode = false;
-  renderDetail();
-}
-
-function renderDetail(){
-  const overlay = document.getElementById('detail-overlay');
-  const record = detailPair[detailMode] || detailPair.pre || detailPair.post;
-  if (!record){ closeDetail(); return; }
-  if (editMode) renderDetailEdit(overlay, record);
-  else renderDetailView(overlay, record);
-}
-
-function renderDetailView(overlay, record){
-  const checklist = Array.isArray(record.ChecklistJSON) ? record.ChecklistJSON : [];
-  const mode = record.Mode;
-  let groupsHtml = checklist.map(grp => {
-    const itemsHtml = grp.items.map(it => {
-      let statusHtml = '';
-      if (grp.kind === 'task'){
-        statusHtml = `<span class="ditem-status ${it.done?'status-ok':'status-neutral'}">${it.done?'Done':'Not done'}</span>`;
-      } else if (grp.kind === 'security'){
-        if (it.unlocked) statusHtml = `<span class="ditem-status status-select">Unlocked</span>`;
-        else if (it.locked) statusHtml = `<span class="ditem-status status-select">Locked</span>`;
-        else statusHtml = `<span class="ditem-status status-neutral">Not set</span>`;
-      } else if (grp.kind === 'condition'){
-        if (mode === 'pre'){
-          const label = it.okLabel || grp.okLabel || 'Clean';
-          statusHtml = it.ok
-            ? `<span class="ditem-status status-ok">${label}</span>`
-            : `<span class="ditem-status status-neutral">Not confirmed</span>`;
-        } else {
-          if (it.issue) statusHtml = `<span class="ditem-status status-issue">Damage</span>`;
-          else if (it.noDamage) statusHtml = `<span class="ditem-status status-ok">No Damage</span>`;
-          else statusHtml = `<span class="ditem-status status-neutral">Not reviewed</span>`;
-        }
-      } else if (grp.kind === 'supply'){
-        const qtySet = it.restockedQty !== null && it.restockedQty !== undefined;
-        statusHtml = `<span class="ditem-status ${qtySet?'status-select':'status-neutral'}">${qtySet?('Qty: '+it.restockedQty):'Not set'}</span>`;
-      } else if (grp.kind === 'collect'){
-        if ('provided' in it) statusHtml = `<span class="ditem-status ${it.provided?'status-ok':'status-neutral'}">${it.provided?'Provided':'—'}</span>${it.fobNumber?` <span class="ditem-status status-neutral">#${it.fobNumber}</span>`:''}`;
-        else if ('returned' in it) statusHtml = `<span class="ditem-status ${it.returned?'status-ok':'status-neutral'}">${it.returned?'Returned':'—'}</span>`;
-      }
-      return `<div class="ditem">
-        <div class="ditem-name">${it.name}${it.note ? `<div class="ditem-note">${it.note}</div>` : ''}</div>
-        ${statusHtml}
-      </div>`;
-    }).join('');
-    return `<div class="dgroup"><div class="dgroup-title">${grp.title}</div>${itemsHtml}</div>`;
-  }).join('');
-
-  const photosHtml = (record.PhotoURLs||[]).length
-    ? `<div class="dphotos">${record.PhotoURLs.map(u=>`<a href="${u}" target="_blank"><img src="${u}"></a>`).join('')}</div>`
-    : '';
-
-  const historyHtml = (isMaster && record.EditHistory && record.EditHistory.length)
-    ? `<div class="dgroup-title" style="margin-top:14px;">Edit History <span style="color:var(--text-muted);font-weight:400;text-transform:none;">(master view)</span></div>
-       <div class="edit-history">${record.EditHistory.slice().reverse().map(h => `
-         <div class="eh-entry">
-           <div class="eh-time">${new Date(h.timestamp).toLocaleString('en-CA')}</div>
-           <div class="eh-summary">${h.summary}</div>
-         </div>`).join('')}</div>`
-    : '';
-
-  overlay.innerHTML = `
-    <div class="detail-panel">
-      <button class="detail-close" onclick="closeDetail()">✕</button>
-      <div class="detail-head">
-        <h2>${ROOM_LABELS[record.Room] || record.Room}</h2>
-        <div class="dh-meta">Unit ${record.Unit} · ${record.Date} ${record.Time} · ${record.Concierge}</div>
+function renderModeSelect(){
+  const r = ROOMS[state.room];
+  document.querySelector('.sub').textContent = r.label;
+  app.innerHTML = `
+    <div class="backbar">
+      <button class="backbtn" onclick="renderRoomSelect()">&larr; Rooms</button>
+      <span class="crumb"><b>${r.label}</b></span>
+    </div>
+    <div class="choice-row">
+      <div class="choice-card" onclick="selectMode('pre')">
+        <div><div class="cc-title">Pre-Inspection</div><div class="cc-desc">Before the resident's booking begins</div></div>
+        <div class="cc-arrow">&rarr;</div>
       </div>
-
-      <div class="mode-toggle">
-        <button class="${detailMode==='pre'?'active':''}" ${!detailPair.pre?'disabled':''} onclick="switchDetailMode('pre')">Pre-Inspection</button>
-        <button class="${detailMode==='post'?'active':''}" ${!detailPair.post?'disabled':''} onclick="switchDetailMode('post')">Post-Inspection</button>
+      <div class="choice-card" onclick="selectMode('post')">
+        <div><div class="cc-title">Post-Inspection</div><div class="cc-desc">After the booking ends</div></div>
+        <div class="cc-arrow">&rarr;</div>
       </div>
-
-      <div class="action-row">
-        <button class="edit-btn" onclick="enterEditMode()">✎ Edit Report</button>
-      </div>
-
-      ${groupsHtml}
-
-      ${record.Comments ? `<div class="dgroup-title" style="margin-top:14px;">Comments</div><div class="dcomments">${record.Comments}</div>` : ''}
-      ${photosHtml ? `<div class="dgroup-title" style="margin-top:14px;">Photos</div>${photosHtml}` : ''}
-      ${historyHtml}
     </div>
   `;
 }
 
-// =========================================================
-// EDIT MODE
-// =========================================================
-function enterEditMode(){
-  const record = detailPair[detailMode] || detailPair.pre || detailPair.post;
-  editSourceRecord = JSON.parse(JSON.stringify(record)); // snapshot for diffing
-  editMode = true;
-  renderDetail();
+function selectMode(mode){
+  state.mode = mode;
+  renderForm();
 }
 
-function exitEditMode(){
-  editMode = false;
-  editSourceRecord = null;
-  renderDetail();
-}
+// =========================================================
+// FORM RENDER
+// =========================================================
+function renderForm(){
+  const r = ROOMS[state.room];
+  const modeLabel = state.mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
+  document.querySelector('.sub').textContent = `${r.label} — ${modeLabel}`;
 
-function buildEditItemHtml(grp, gi, ii, it, mode){
-  const noteVal = (it.note||'').replace(/"/g,'&quot;');
-  if (grp.kind === 'task'){
-    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
-      <div class="item-top"><div class="item-name">${it.name}</div>
-      <div class="item-controls"><button type="button" class="pill ok ${it.done?'active':''}" data-role="done" onclick="togglePill(this)">Done</button></div></div>
-    </div>`;
-  }
-  if (grp.kind === 'security'){
-    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
-      <div class="item-top"><div class="item-name">${it.name}</div>
-      <div class="item-controls">
-        <button type="button" class="pill select ${it.unlocked?'active':''}" data-role="unlocked" onclick="selectLockState(this)">Unlocked</button>
-        <button type="button" class="pill select ${it.locked?'active':''}" data-role="locked" onclick="selectLockState(this)">Locked</button>
-      </div></div>
-    </div>`;
-  }
-  if (grp.kind === 'condition'){
-    if (mode === 'pre'){
-      const label = it.okLabel || grp.okLabel || 'Clean';
-      return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
-        <div class="item-top"><div class="item-name">${it.name}</div>
-        <div class="item-controls"><button type="button" class="pill ok ${it.ok?'active':''}" data-role="ok" onclick="togglePill(this)">${label}</button></div></div>
+  let html = `
+    <div class="backbar">
+      <button class="backbtn" onclick="renderModeSelect()">&larr; Back</button>
+      <span class="crumb"><b>${r.label}</b> · ${modeLabel}</span>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Progress</span><span class="count" id="progress-count">0 / 0</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <div class="field-grid">
+      <div class="field"><label>Date</label><input type="date" id="f-date"></div>
+      <div class="field" style="position:relative;">
+        <label>Unit #</label>
+        <input type="text" id="f-unit" placeholder="e.g. 1502 or TH3" autocomplete="off"
+          oninput="filterUnitSuggestions(this)" onfocus="filterUnitSuggestions(this)"
+          onblur="setTimeout(hideUnitSuggestions, 150)">
+        <div class="unit-suggestions" id="unit-suggestions"></div>
+      </div>
+      <div class="field"><label>Concierge Name</label><input type="text" id="f-concierge" placeholder="Your name"></div>
+      <div class="field"><label>Time</label><input type="time" id="f-time"></div>
+    </div>
+  `;
+
+  r.groups.forEach((grp, gi) => {
+    html += `<div class="group">
+      <div class="group-head">
+        <span class="group-icon">${grp.icon}</span>
+        <span class="group-title">${grp.title}</span>
+        <span class="group-count">${grp.items.length} item${grp.items.length>1?'s':''}</span>
       </div>`;
-    }
-    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
-      <div class="item-top"><div class="item-name">${it.name}</div>
-      <div class="item-controls">
-        <button type="button" class="pill issue ${it.issue?'active':''}" data-role="issue" onclick="selectDamageState(this)">Damage</button>
-        <button type="button" class="pill ok ${it.noDamage?'active':''}" data-role="nodamage" onclick="selectDamageState(this)">No Damage</button>
-      </div></div>
-      <div class="issue-note ${it.issue?'show':''}"><input type="text" data-role="note" value="${noteVal}" placeholder="Briefly note the issue..."></div>
-    </div>`;
-  }
-  if (grp.kind === 'supply'){
-    const maxQty = (it.refQty || 0) + 1;
-    let qtyPills = '';
-    for (let q = 0; q <= maxQty; q++){
-      qtyPills += `<button type="button" class="pill select ${it.restockedQty===q?'active':''}" data-role="qty" data-qty="${q}" onclick="selectQty(this)">${q}</button>`;
-    }
-    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
-      <div class="item-top"><div class="item-name">${it.name}</div>${it.refQty?`<span class="qty-badge">Ref: ${it.refQty}</span>`:''}</div>
-      <div class="item-controls" style="margin-top:9px;flex-wrap:wrap;">${qtyPills}</div>
-    </div>`;
-  }
-  if (grp.kind === 'collect'){
-    if (mode === 'pre'){
-      let fobHtml = '';
-      if ('fobNumber' in it){
-        let opts = '<option value="">Fob #</option>';
-        for (let n=1; n<=5; n++) opts += `<option value="${n}" ${String(it.fobNumber)===String(n)?'selected':''}>Fob ${n}</option>`;
-        fobHtml = `<select class="id-input" data-role="idnum">${opts}</select>`;
+
+    grp.items.forEach((raw, ii) => {
+      const item = typeof raw === 'string' ? { name: raw } : raw;
+      const id = `g${gi}-i${ii}`;
+
+      if (grp.kind === 'task'){
+        html += `<div class="item" data-grp="${gi}" data-item="${ii}" data-kind="task">
+          <div class="item-top">
+            <div class="item-name">${item.name}</div>
+            <div class="item-controls">
+              <button type="button" class="pill ok" data-role="done" onclick="togglePill(this)">Done</button>
+            </div>
+          </div>
+        </div>`;
+      } else if (grp.kind === 'security'){
+        html += `<div class="item" data-grp="${gi}" data-item="${ii}" data-kind="security">
+          <div class="item-top">
+            <div class="item-name">${item.name}</div>
+            <div class="item-controls">
+              <button type="button" class="pill select" data-role="unlocked" onclick="selectLockState(this)">Unlocked</button>
+              <button type="button" class="pill select" data-role="locked" onclick="selectLockState(this)">Locked</button>
+            </div>
+          </div>
+        </div>`;
+      } else if (grp.kind === 'condition'){
+        const okLabel = item.okLabel || grp.okLabel || 'Clean';
+        const isPre = state.mode === 'pre';
+        html += `<div class="item" data-grp="${gi}" data-item="${ii}" data-kind="condition">
+          <div class="item-top">
+            <div class="item-name">${item.name}</div>
+            <div class="item-controls">
+              ${isPre
+                ? `<button type="button" class="pill ok" data-role="ok" onclick="togglePill(this)">${okLabel}</button>`
+                : `<button type="button" class="pill issue" data-role="issue" onclick="selectDamageState(this)">Damage</button>
+                   <button type="button" class="pill ok" data-role="nodamage" onclick="selectDamageState(this)">No Damage</button>`}
+            </div>
+          </div>
+          ${isPre ? '' : `<div class="issue-note" id="note-${id}">
+            <input type="text" placeholder="Briefly note the issue..." data-role="note">
+          </div>`}
+        </div>`;
+      } else if (grp.kind === 'supply'){
+        const maxQty = (item.qty || 0) + 1;
+        let qtyPills = '';
+        for (let q = 0; q <= maxQty; q++){
+          qtyPills += `<button type="button" class="pill select" data-role="qty" data-qty="${q}" onclick="selectQty(this)">${q}</button>`;
+        }
+        html += `<div class="item" data-grp="${gi}" data-item="${ii}" data-kind="supply">
+          <div class="item-top">
+            <div class="item-name">${item.name}</div>
+            ${item.qty ? `<span class="qty-badge">Ref: ${item.qty}</span>` : ''}
+          </div>
+          <div class="item-controls" style="margin-top:9px;flex-wrap:wrap;">${qtyPills}</div>
+        </div>`;
+      } else if (grp.kind === 'collect'){
+        const isPre = state.mode === 'pre';
+        let controls = '';
+        if (isPre){
+          if (item.withId){
+            const count = item.fobCount || 5;
+            let opts = '<option value="">Fob #</option>';
+            for (let n=1; n<=count; n++) opts += `<option value="${n}">Fob ${n}</option>`;
+            controls += `<select class="id-input" data-role="idnum">${opts}</select>`;
+          }
+          controls += `<button type="button" class="pill ok" data-role="provided" onclick="togglePill(this)">Provided</button>`;
+        } else {
+          controls += `<button type="button" class="pill ok" data-role="returned" onclick="togglePill(this)">Returned</button>`;
+        }
+        html += `<div class="item" data-grp="${gi}" data-item="${ii}" data-kind="collect">
+          <div class="item-top">
+            <div class="item-name">${item.name}</div>
+            <div class="item-controls">${controls}</div>
+          </div>
+        </div>`;
       }
-      return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
-        <div class="item-top"><div class="item-name">${it.name}</div>
-        <div class="item-controls">${fobHtml}<button type="button" class="pill ok ${it.provided?'active':''}" data-role="provided" onclick="togglePill(this)">Provided</button></div></div>
-      </div>`;
-    }
-    return `<div class="item" data-egrp="${gi}" data-eitem="${ii}">
-      <div class="item-top"><div class="item-name">${it.name}</div>
-      <div class="item-controls"><button type="button" class="pill ok ${it.returned?'active':''}" data-role="returned" onclick="togglePill(this)">Returned</button></div></div>
-    </div>`;
-  }
-  return '';
+    });
+
+    html += `</div>`;
+  });
+
+  html += `
+    <div class="flagged-panel" id="flagged-panel">
+      <div class="flagged-title">⚠ Flagged Issues</div>
+      <ul class="flagged-list" id="flagged-list"></ul>
+    </div>
+
+    <div class="field" style="margin-bottom:16px;">
+      <label>Comments</label>
+      <textarea rows="3" id="f-comments" placeholder="Any general notes about this inspection..."></textarea>
+    </div>
+
+    <div class="photo-section">
+      <div class="ph-icon">📷</div>
+      <div class="ph-text" id="photo-status">Attach photos for this inspection<br>(one section covers the whole room)</div>
+      <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(event)">
+      <button class="photo-upload-btn" type="button" onclick="document.getElementById('photo-input').click()">Add Photos</button>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitInspection()">Submit ${modeLabel}</button>
+  `;
+
+  app.innerHTML = html;
+  setDefaultDateTime();
+  updateProgress();
 }
 
-function togglePill(btn){ btn.classList.toggle('active'); }
-function toggleEditIssuePill(btn){
+function setDefaultDateTime(){
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mi = String(now.getMinutes()).padStart(2,'0');
+  const dateEl = document.getElementById('f-date');
+  const timeEl = document.getElementById('f-time');
+  if (dateEl) dateEl.value = `${yyyy}-${mm}-${dd}`;
+  if (timeEl) timeEl.value = `${hh}:${mi}`;
+}
+
+// =========================================================
+// INTERACTIONS
+// =========================================================
+function togglePill(btn){
+  btn.classList.toggle('active');
+  updateProgress();
+  updateFlaggedSummary();
+}
+
+function toggleIssuePill(btn){
   btn.classList.toggle('active');
   const item = btn.closest('.item');
   const note = item.querySelector('.issue-note');
-  if (note) note.classList.toggle('show', btn.classList.contains('active'));
+  if (btn.classList.contains('active')){
+    note.classList.add('show');
+  } else {
+    note.classList.remove('show');
+    note.querySelector('input').value = '';
+  }
+  updateProgress();
+  updateFlaggedSummary();
 }
+
 function selectLockState(btn){
   const controls = btn.parentElement;
   controls.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
+  updateProgress();
+  updateFlaggedSummary();
 }
+
 function selectQty(btn){
   const controls = btn.parentElement;
   controls.querySelectorAll('[data-role="qty"]').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
+  updateProgress();
 }
+
 function selectDamageState(btn){
   const controls = btn.parentElement;
   controls.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
@@ -695,53 +565,77 @@ function selectDamageState(btn){
     if (isDamage) note.classList.add('show');
     else { note.classList.remove('show'); note.querySelector('input').value = ''; }
   }
+  updateProgress();
+  updateFlaggedSummary();
 }
 
-function renderDetailEdit(overlay, record){
-  const checklist = Array.isArray(record.ChecklistJSON) ? record.ChecklistJSON : [];
-  const mode = record.Mode;
-  const groupsHtml = checklist.map((grp, gi) => {
-    const itemsHtml = grp.items.map((it, ii) => buildEditItemHtml(grp, gi, ii, it, mode)).join('');
-    return `<div class="dgroup"><div class="dgroup-title">${grp.title}</div>${itemsHtml}</div>`;
+function updateProgress(){
+  const items = document.querySelectorAll('.item');
+  let total = items.length, done = 0;
+  items.forEach(el => {
+    const active = el.querySelectorAll('.pill.active');
+    if (active.length > 0) done++;
+  });
+  const pct = total ? Math.round((done/total)*100) : 0;
+  const fill = document.getElementById('progress-fill');
+  const count = document.getElementById('progress-count');
+  if (fill) fill.style.width = pct + '%';
+  if (count) count.textContent = `${done} / ${total}`;
+}
+
+function updateFlaggedSummary(){
+  const panel = document.getElementById('flagged-panel');
+  const list = document.getElementById('flagged-list');
+  const issues = document.querySelectorAll('.pill.issue.active');
+  if (!issues.length){
+    panel.classList.remove('show');
+    list.innerHTML = '';
+    return;
+  }
+  panel.classList.add('show');
+  list.innerHTML = Array.from(issues).map(btn => {
+    const item = btn.closest('.item');
+    const name = item.querySelector('.item-name').textContent;
+    const noteEl = item.querySelector('.issue-note input');
+    const note = noteEl ? noteEl.value.trim() : '';
+    const label = btn.textContent.trim();
+    return `<li>${name} <span class="fl-note">(${label}${note ? ': '+note : ''})</span></li>`;
   }).join('');
-
-  overlay.innerHTML = `
-    <div class="detail-panel">
-      <button class="detail-close" onclick="closeDetail()">✕</button>
-      <div class="detail-head">
-        <h2>${ROOM_LABELS[record.Room] || record.Room} <span style="font-size:11px;color:var(--warn);text-transform:uppercase;letter-spacing:.05em;">· Editing</span></h2>
-        <div class="dh-meta">Unit ${record.Unit} · ${record.Date} · ${mode==='pre'?'Pre-Inspection':'Post-Inspection'}</div>
-      </div>
-
-      <div class="field-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
-        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:5px;">Concierge</label>
-          <input type="text" id="edit-concierge" value="${(record.Concierge||'').replace(/"/g,'&quot;')}"
-            style="width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:7px;font-size:13px;box-sizing:border-box;"></div>
-        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:5px;">Time</label>
-          <input type="time" id="edit-time" value="${record.Time||''}"
-            style="width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:7px;font-size:13px;box-sizing:border-box;"></div>
-      </div>
-
-      ${groupsHtml}
-
-      <div class="dgroup-title" style="margin-top:14px;">Comments</div>
-      <textarea id="edit-comments" rows="3" style="width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;">${record.Comments||''}</textarea>
-
-      <div class="action-row" style="margin-top:18px;">
-        <button class="cancel-btn" onclick="exitEditMode()">Cancel</button>
-        <button class="save-btn" id="save-edit-btn" onclick="saveEdit()">Save Changes</button>
-      </div>
-    </div>
-  `;
 }
 
-function collectEditedChecklist(record){
-  const checklist = Array.isArray(record.ChecklistJSON) ? record.ChecklistJSON : [];
-  const mode = record.Mode;
-  return checklist.map((grp, gi) => {
-    const items = grp.items.map((it, ii) => {
-      const el = document.querySelector(`[data-egrp="${gi}"][data-eitem="${ii}"]`);
-      const rec = { name: it.name };
+// re-check flagged summary when a note is typed (live)
+document.addEventListener('input', (e) => {
+  if (e.target.matches('.issue-note input')) updateFlaggedSummary();
+});
+
+function handlePhotoSelect(e){
+  state.photos = Array.from(e.target.files);
+  const status = document.getElementById('photo-status');
+  status.innerHTML = state.photos.length
+    ? `${state.photos.length} photo(s) selected`
+    : `Attach photos for this inspection<br>(one section covers the whole room)`;
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// =========================================================
+// COLLECT + SUBMIT
+// =========================================================
+function collectChecklist(){
+  const r = ROOMS[state.room];
+  return r.groups.map((grp, gi) => {
+    const items = grp.items.map((raw, ii) => {
+      const item = typeof raw === 'string' ? { name: raw } : raw;
+      const el = document.querySelector(`[data-grp="${gi}"][data-item="${ii}"]`);
+      const rec = { name: item.name };
+
       if (grp.kind === 'task'){
         rec.done = el.querySelector('[data-role="done"]').classList.contains('active');
       } else if (grp.kind === 'security'){
@@ -754,18 +648,18 @@ function collectEditedChecklist(record){
         const issueEl = el.querySelector('[data-role="issue"]');
         const noDamageEl = el.querySelector('[data-role="nodamage"]');
         const noteEl = el.querySelector('[data-role="note"]');
-        if (it.okLabel) rec.okLabel = it.okLabel;
+        if (state.mode === 'pre') rec.okLabel = item.okLabel || grp.okLabel || 'Clean';
         rec.ok = okEl ? okEl.classList.contains('active') : false;
         rec.issue = issueEl ? issueEl.classList.contains('active') : false;
         rec.noDamage = noDamageEl ? noDamageEl.classList.contains('active') : false;
         rec.note = noteEl ? noteEl.value.trim() : '';
       } else if (grp.kind === 'supply'){
-        if (it.refQty) rec.refQty = it.refQty;
+        if (item.qty) rec.refQty = item.qty;
         const selectedQtyEl = el.querySelector('[data-role="qty"].active');
         rec.restockedQty = selectedQtyEl ? parseInt(selectedQtyEl.dataset.qty, 10) : null;
       } else if (grp.kind === 'collect'){
-        if (mode === 'pre'){
-          if ('fobNumber' in it) rec.fobNumber = el.querySelector('[data-role="idnum"]').value;
+        if (state.mode === 'pre'){
+          if (item.withId) rec.fobNumber = el.querySelector('[data-role="idnum"]').value;
           rec.provided = el.querySelector('[data-role="provided"]').classList.contains('active');
         } else {
           rec.returned = el.querySelector('[data-role="returned"]').classList.contains('active');
@@ -777,85 +671,80 @@ function collectEditedChecklist(record){
   });
 }
 
-function buildEditSummary(originalChecklist, updatedChecklist){
-  const changes = [];
-  const origFlat = [];
-  (originalChecklist||[]).forEach(grp => (grp.items||[]).forEach(it => origFlat.push(it)));
-  const updFlat = [];
-  (updatedChecklist||[]).forEach(grp => (grp.items||[]).forEach(it => updFlat.push(it)));
-  const keys = ['ok','issue','noDamage','done','restockedQty','provided','returned','note','fobNumber','locked','unlocked'];
-  origFlat.forEach((o, idx) => {
-    const u = updFlat[idx];
-    if (!u) return;
-    keys.forEach(k => {
-      const ov = o[k] === undefined ? null : o[k];
-      const uv = u[k] === undefined ? null : u[k];
-      if (JSON.stringify(ov) !== JSON.stringify(uv)){
-        changes.push(`${o.name} (${k}): ${JSON.stringify(ov)} \u2192 ${JSON.stringify(uv)}`);
-      }
-    });
-  });
-  return changes;
-}
+async function submitInspection(){
+  const r = ROOMS[state.room];
+  const date = document.getElementById('f-date').value;
+  const unit = document.getElementById('f-unit').value;
+  const concierge = document.getElementById('f-concierge').value;
+  const time = document.getElementById('f-time').value;
+  const comments = document.getElementById('f-comments').value;
 
-async function saveEdit(){
-  const original = editSourceRecord;
-  const current = detailPair[detailMode] || detailPair.pre || detailPair.post;
-  const newChecklist = collectEditedChecklist(current);
-  const newComments = document.getElementById('edit-comments').value;
-  const newConcierge = document.getElementById('edit-concierge').value;
-  const newTime = document.getElementById('edit-time').value;
-
-  const changes = buildEditSummary(original.ChecklistJSON, newChecklist);
-  if (newComments !== (original.Comments||'')) changes.push('Comments updated');
-  if (newConcierge !== (original.Concierge||'')) changes.push(`Concierge: "${original.Concierge||''}" \u2192 "${newConcierge}"`);
-  if (newTime !== (original.Time||'')) changes.push(`Time: ${original.Time||''} \u2192 ${newTime}`);
-
-  if (!changes.length){
-    toast('No changes made');
-    exitEditMode();
+  if (!date || !unit || !concierge){
+    toast('Please fill in date, unit, and concierge name');
     return;
   }
 
-  const btn = document.getElementById('save-edit-btn');
+  const btn = document.getElementById('submit-btn');
   btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.textContent = 'Submitting...';
 
   try {
+    const photos = await Promise.all(state.photos.map(async f => ({
+      filename: f.name,
+      mimeType: f.type || 'image/jpeg',
+      base64: await fileToBase64(f)
+    })));
+
+    const payload = {
+      room: state.room,
+      roomLabel: r.label,
+      mode: state.mode,
+      date, unit, concierge, time, comments,
+      checklist: collectChecklist(),
+      photos
+    };
+
     const res = await fetch(WEB_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'update',
-        submissionId: current.SubmissionID,
-        concierge: newConcierge,
-        time: newTime,
-        checklist: newChecklist,
-        comments: newComments,
-        editSummary: changes.join('; ')
-      })
+      body: JSON.stringify(payload)
     });
     const result = await res.json();
+
     if (result.success){
-      toast('Changes saved');
-      editMode = false;
-      editSourceRecord = null;
-      await fetchData();
-      const pair = allData.filter(r => r.RecordKey === current.RecordKey);
-      detailPair.pre = pair.find(r => r.Mode === 'pre') || null;
-      detailPair.post = pair.find(r => r.Mode === 'post') || null;
-      renderDetail();
+      toast('Submitted — saved to the sheet');
+      setTimeout(() => renderRoomSelect(), 1200);
     } else {
-      toast('Save failed: ' + (result.error || 'unknown error'));
+      toast('Error: ' + (result.error || 'submission failed'));
       btn.disabled = false;
-      btn.textContent = 'Save Changes';
+      btn.textContent = 'Submit ' + (state.mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection');
     }
   } catch (err) {
-    toast('Network error while saving');
+    toast('Network error — check the deployment URL');
     btn.disabled = false;
-    btn.textContent = 'Save Changes';
+    btn.textContent = 'Submit ' + (state.mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection');
   }
 }
+
+renderRoomSelect();
+
+// =========================================================
+// INTRO: single logo floats up and docks, THEN the page reveals
+// =========================================================
+function startGate(){
+  const logo = document.getElementById('siteLogo');
+  const backdrop = document.getElementById('gateBackdrop');
+  const page = document.getElementById('pageWrap');
+
+  setTimeout(function(){ logo.classList.add('visible'); }, 150);      // fade/unblur in place, still large & centered
+  setTimeout(function(){ logo.classList.add('docked'); }, 1400);      // floats up + shrinks to its resting spot
+  setTimeout(function(){ backdrop.style.opacity = '0'; }, 2500);      // backdrop clears once logo has landed
+  setTimeout(function(){
+    backdrop.style.display = 'none';
+    page.classList.add('show');                                     // page content reveals under the docked logo
+  }, 3300);
+}
+startGate();
 </script>
 </body>
 </html>
