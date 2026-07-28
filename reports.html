@@ -23,29 +23,32 @@
     color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
   .hidden{display:none !important;}
 
-  /* ---- LOGIN GATE (zoom logo -> shrink -> rule -> tagline -> form) ---- */
-  #login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-    background:var(--navy-deep);
+  /* ---- SINGLE PERSISTENT LOGO: floats from center-screen to a docked
+     top position and stays there through login and into the dashboard. ---- */
+  #siteLogo{position:fixed;z-index:150;top:50%;left:50%;
+    transform:translate(-50%,-50%);width:min(46vw,170px);
+    opacity:0;filter:blur(10px);
+    transition:top 1.3s cubic-bezier(0.16,1,0.3,1), transform 1.3s cubic-bezier(0.16,1,0.3,1),
+      width 1.3s cubic-bezier(0.16,1,0.3,1), opacity .9s ease, filter .9s ease;}
+  #siteLogo.visible{opacity:1;filter:drop-shadow(0 0 30px rgba(201,160,74,0.4)) drop-shadow(0 0 60px rgba(201,160,74,0.15));}
+  #siteLogo.docked{top:26px;transform:translate(-50%,0);width:50px;
+    filter:drop-shadow(0 4px 14px rgba(201,160,74,0.3));}
+
+  #gateBackdrop{position:fixed;inset:0;z-index:120;background:var(--navy-deep);
     background-image:radial-gradient(circle at 50% 30%, rgba(201,160,74,0.10), transparent 55%);
-    z-index:100;overflow:hidden;}
-  .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);pointer-events:none;}
-  .gate-content{position:relative;z-index:2;text-align:center;padding:20px;width:100%;max-width:380px;}
-  .gate-logo-wrap{position:relative;width:min(46vw,160px);margin:0 auto;opacity:0;transform:scale(2.4);filter:blur(8px);
-    transition:opacity 1s ease,transform 1.5s cubic-bezier(0.16,1,0.3,1),filter 1s ease;}
-  .gate-logo-wrap.show{opacity:1;filter:blur(0px);}
-  .gate-logo-wrap.shrink{transform:scale(1);}
-  .gate-logo-img{width:100%;display:block;filter:drop-shadow(0 0 30px rgba(201,160,74,0.4)) drop-shadow(0 0 60px rgba(201,160,74,0.15));}
-  .gate-rule{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:20px auto 0;
-    transition:width 0.9s cubic-bezier(0.22,1,0.36,1);}
-  .gate-rule.show{width:180px;}
+    transition:opacity .8s ease;}
+  .gate-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.5) 100%);}
+
+  #login-screen{position:fixed;inset:0;z-index:130;display:flex;align-items:center;justify-content:center;
+    padding-top:70px;}
+  .gate-content{position:relative;text-align:center;padding:20px;width:100%;max-width:380px;
+    opacity:0;transform:translateY(10px);transition:opacity .8s ease, transform .8s ease;}
+  .gate-content.show{opacity:1;transform:translateY(0);}
   .gate-tagline{font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--text);line-height:1.4;
-    margin-top:16px;letter-spacing:0.3px;opacity:0;transform:translateY(10px);transition:all 0.8s ease;}
-  .gate-tagline.show{opacity:1;transform:translateY(0);}
+    letter-spacing:0.3px;}
   .gate-hint{font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;
-    margin-top:8px;margin-bottom:24px;opacity:0;transition:opacity 0.8s ease;}
-  .gate-hint.show{opacity:1;}
-  .gate-form{opacity:0;transform:translateY(10px);transition:all 0.8s ease;}
-  .gate-form.show{opacity:1;transform:translateY(0);}
+    margin-top:8px;margin-bottom:24px;}
+  .gate-form{}
   .gate-input{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);
     padding:13px 18px;border-radius:10px;font-size:16px;text-align:center;letter-spacing:0.3em;
     outline:none;font-family:'Inter',sans-serif;transition:border-color .2s,box-shadow .2s;box-sizing:border-box;}
@@ -61,9 +64,6 @@
     color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;opacity:0.6;}
   .gate-watermark span{color:var(--gold-bright);}
   @keyframes gateShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
-  .header-logo{width:44px;height:auto;display:block;margin-bottom:6px;opacity:0;transition:opacity .8s ease;
-    filter:drop-shadow(0 4px 14px rgba(201,160,74,0.3));}
-  .header-logo.show{opacity:1;}
 
   /* ---- MAIN APP ---- */
   #main-app{max-width:1100px;margin:0 auto;padding:22px 16px 70px;}
@@ -209,13 +209,11 @@
 </head>
 <body>
 
+<img id="siteLogo" src="logo.png" alt="The Rideau">
+<div id="gateBackdrop"><div class="gate-vignette"></div></div>
+
 <div id="login-screen">
-  <div class="gate-vignette"></div>
-  <div class="gate-content">
-    <div class="gate-logo-wrap" id="gateLogoWrap">
-      <img class="gate-logo-img" src="logo.png" alt="The Rideau">
-    </div>
-    <div class="gate-rule" id="gateRule"></div>
+  <div class="gate-content" id="gateContent">
     <div class="gate-tagline" id="gateTagline">Inspection Reports</div>
     <div class="gate-hint" id="gateHint">ENTER PASSWORD TO CONTINUE</div>
     <div class="gate-form" id="gateForm">
@@ -230,7 +228,6 @@
 <div id="main-app" class="hidden">
   <header class="top">
     <div>
-      <img class="header-logo" id="headerLogo" src="logo.png" alt="The Rideau">
       <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
       <h1>Inspection Reports</h1>
       <div id="master-banner" class="master-banner hidden">🔑 MASTER REPORT</div>
@@ -266,18 +263,21 @@ const ROOM_LABELS = {
 };
 
 // =========================================================
-// LOGIN GATE ANIMATION
+// LOGIN GATE: logo floats up and docks first, THEN the password
+// card reveals underneath it. On success, only the backdrop and
+// password card fade away - the logo never moves again.
 // =========================================================
 function startGate(){
-  setTimeout(function(){ document.getElementById('gateLogoWrap').classList.add('show'); }, 150);
-  setTimeout(function(){ document.getElementById('gateLogoWrap').classList.add('shrink'); }, 1500);
-  setTimeout(function(){ document.getElementById('gateRule').classList.add('show'); }, 2300);
-  setTimeout(function(){ document.getElementById('gateTagline').classList.add('show'); }, 2500);
-  setTimeout(function(){ document.getElementById('gateHint').classList.add('show'); }, 2650);
+  const logo = document.getElementById('siteLogo');
+  const backdrop = document.getElementById('gateBackdrop');
+  const content = document.getElementById('gateContent');
+
+  setTimeout(function(){ logo.classList.add('visible'); }, 150);
+  setTimeout(function(){ logo.classList.add('docked'); }, 1400);
   setTimeout(function(){
-    document.getElementById('gateForm').classList.add('show');
+    content.classList.add('show');
     document.getElementById('pw-input').focus();
-  }, 2800);
+  }, 2500);
 }
 startGate();
 
@@ -285,30 +285,21 @@ function tryLogin(){
   const val = document.getElementById('pw-input').value;
   if (val === PASSWORD_MASTER || val === PASSWORD_REGULAR){
     isMaster = (val === PASSWORD_MASTER);
+    const backdrop = document.getElementById('gateBackdrop');
     const gate = document.getElementById('login-screen');
 
-    gate.style.transition = 'background-color 0.6s ease';
-    gate.style.backgroundColor = 'transparent';
-    gate.style.backgroundImage = 'none';
-    document.querySelector('#login-screen .gate-vignette').style.transition = 'opacity 0.6s ease';
-    document.querySelector('#login-screen .gate-vignette').style.opacity = '0';
-    document.getElementById('gateRule').style.transition = 'opacity 0.4s ease';
-    document.getElementById('gateRule').style.opacity = '0';
-    document.getElementById('gateTagline').style.transition = 'opacity 0.4s ease';
-    document.getElementById('gateTagline').style.opacity = '0';
-    document.getElementById('gateHint').style.transition = 'opacity 0.4s ease';
-    document.getElementById('gateHint').style.opacity = '0';
-    document.getElementById('gateForm').style.transition = 'opacity 0.4s ease';
-    document.getElementById('gateForm').style.opacity = '0';
-    document.getElementById('gateLogoWrap').style.transition = 'opacity 0.6s ease';
-    document.getElementById('gateLogoWrap').style.opacity = '0';
+    backdrop.style.opacity = '0';
+    gate.style.transition = 'opacity 0.4s ease';
+    gate.style.opacity = '0';
 
     document.getElementById('main-app').classList.remove('hidden');
     document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
-    document.getElementById('headerLogo').classList.add('show');
     initDashboard();
 
-    setTimeout(() => { gate.style.display = 'none'; }, 650);
+    setTimeout(() => {
+      backdrop.style.display = 'none';
+      gate.style.display = 'none';
+    }, 500);
   } else {
     const input = document.getElementById('pw-input');
     input.classList.add('error');
