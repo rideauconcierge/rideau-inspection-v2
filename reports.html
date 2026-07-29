@@ -137,6 +137,21 @@
   /* detail modal */
   #detail-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.75);z-index:160;
     display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;}
+
+  #email-prompt-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.8);z-index:210;
+    display:flex;align-items:center;justify-content:center;padding:20px;}
+  .email-prompt-card{background:var(--navy-card);border:1px solid var(--border);border-radius:14px;
+    padding:26px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+  .ep-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin-bottom:6px;}
+  .ep-desc{color:var(--text-muted);font-size:12px;margin-bottom:16px;line-height:1.5;}
+  #ep-email-input{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);
+    padding:11px 13px;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;box-sizing:border-box;margin-bottom:16px;}
+  #ep-email-input:focus{outline:none;border-color:var(--gold);}
+  .ep-actions{display:flex;gap:10px;}
+  .ep-btn{flex:1;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;}
+  .ep-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .ep-cancel{background:var(--navy);border:1px solid var(--border);color:var(--text-muted);}
+  .ep-send{background:linear-gradient(135deg,var(--gold),#a67f34);border:none;color:var(--navy-deep);}
   .detail-panel{background:var(--navy-deep);border:1px solid var(--border);border-radius:14px;
     max-width:640px;width:100%;padding:26px 24px 30px;position:relative;}
   .detail-close{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--text-muted);
@@ -453,22 +468,106 @@ function countIssues(checklist){
 }
 
 // =========================================================
-// SEND FOR SIGNATURE
+// SEND FOR SIGNATURE / REMINDERS
 // =========================================================
 function buildSignLink(submissionId){
   const base = window.location.href.replace(/[^/]*$/, '');
   return base + 'sign.html?id=' + encodeURIComponent(submissionId);
 }
 
-function sendForSignature(submissionId, roomLabel, modeLabel, unit, date){
+async function sendSignatureRequest(submissionId, roomLabel, modeLabel, unit, date, email, isReminder){
+  try {
+    await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'requestSignature', submissionId, residentEmail: email })
+    });
+  } catch (err) { /* still open the email even if saving the address failed */ }
+
   const link = buildSignLink(submissionId);
-  const subject = `Signature Required - ${roomLabel} - ${date}`;
-  const body = `Hello,\r\n\r\nPlease review and sign the amenity inspection report below:\r\n\r\n`
+  const subject = (isReminder ? 'Reminder: ' : '') + `Signature Required - ${roomLabel} - ${date}`;
+  const intro = isReminder
+    ? `Hello,\r\n\r\nThis is a friendly reminder that we haven't yet received your signature for the amenity inspection report below:\r\n\r\n`
+    : `Hello,\r\n\r\nPlease review and sign the amenity inspection report below:\r\n\r\n`;
+  const body = intro
     + `Room: ${roomLabel}\r\nUnit: ${unit}\r\nType: ${modeLabel}\r\n\r\n`
     + `Sign here:\r\n${link}\r\n\r\n`
     + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\r\n\r\n`
     + `Thank you,\r\nThe Rideau Concierge`;
-  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  toast(isReminder ? 'Reminder sent' : 'Signature request sent');
+  setTimeout(fetchData, 800); // refresh so the card switches to "Send Reminder" state
+}
+
+function openEmailPrompt(submissionId, roomLabel, modeLabel, unit, date, existingEmail, isReminder){
+  const overlay = document.createElement('div');
+  overlay.id = 'email-prompt-overlay';
+  overlay.innerHTML = `
+    <div class="email-prompt-card">
+      <div class="ep-title">${isReminder ? 'Send Reminder to a Different Email' : "Resident's Email"}</div>
+      <div class="ep-desc">${isReminder ? 'This will also update the email saved for future reminders.' : 'Enter the email to send the signature request to.'}</div>
+      <input type="email" id="ep-email-input" value="${existingEmail || ''}" placeholder="resident@example.com">
+      <div class="ep-actions">
+        <button class="ep-btn ep-cancel" onclick="closeEmailPrompt()">Cancel</button>
+        <button class="ep-btn ep-send" onclick="confirmEmailPrompt()">${isReminder ? 'Send Reminder' : 'Send'}</button>
+      </div>
+    </div>
+  `;
+  overlay.dataset.submissionId = submissionId;
+  overlay.dataset.roomLabel = roomLabel;
+  overlay.dataset.modeLabel = modeLabel;
+  overlay.dataset.unit = unit;
+  overlay.dataset.date = date;
+  overlay.dataset.isReminder = isReminder ? '1' : '';
+  document.body.appendChild(overlay);
+  document.getElementById('ep-email-input').focus();
+}
+function closeEmailPrompt(){
+  const el = document.getElementById('email-prompt-overlay');
+  if (el) el.remove();
+}
+function confirmEmailPrompt(){
+  const email = document.getElementById('ep-email-input').value.trim();
+  if (!email){ toast('Please enter an email address'); return; }
+  const el = document.getElementById('email-prompt-overlay');
+  const d = el.dataset;
+  el.remove();
+  sendSignatureRequest(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date, email, d.isReminder === '1');
+}
+
+function openReminderChoice(submissionId, roomLabel, modeLabel, unit, date, currentEmail){
+  const overlay = document.createElement('div');
+  overlay.id = 'email-prompt-overlay';
+  overlay.innerHTML = `
+    <div class="email-prompt-card">
+      <div class="ep-title">Send Reminder</div>
+      <div class="ep-desc">On file: <b>${currentEmail || '(no email saved)'}</b></div>
+      <div class="ep-actions" style="flex-direction:column;">
+        <button class="ep-btn ep-send" style="width:100%;" ${!currentEmail?'disabled':''} onclick="reminderSameEmail()">Send to Same Email</button>
+        <button class="ep-btn ep-cancel" style="width:100%;margin-top:8px;" onclick="reminderDifferentEmail()">Use a Different Email</button>
+      </div>
+    </div>
+  `;
+  overlay.dataset.submissionId = submissionId;
+  overlay.dataset.roomLabel = roomLabel;
+  overlay.dataset.modeLabel = modeLabel;
+  overlay.dataset.unit = unit;
+  overlay.dataset.date = date;
+  overlay.dataset.email = currentEmail || '';
+  document.body.appendChild(overlay);
+}
+function reminderSameEmail(){
+  const el = document.getElementById('email-prompt-overlay');
+  const d = el.dataset;
+  el.remove();
+  sendSignatureRequest(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date, d.email, true);
+}
+function reminderDifferentEmail(){
+  const el = document.getElementById('email-prompt-overlay');
+  const d = el.dataset;
+  el.remove();
+  openEmailPrompt(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date, '', true);
 }
 
 function renderCards(){
@@ -511,7 +610,10 @@ function renderCards(){
         <span class="flag-badge ${isSigned?'flag-signed':'flag-pending'}">${isSigned?'✓ Signed':'Unsigned'}</span>
       </div>
       ${signaturePreviewHtml}
-      ${!isSigned ? `<button class="card-send-btn" onclick="event.stopPropagation(); sendForSignature('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}')">✍ Send for Signature</button>` : ''}
+      ${!isSigned ? (r.SignatureRequestedAt
+        ? `<button class="card-send-btn card-reminder-btn" onclick="event.stopPropagation(); openReminderChoice('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','${(r.ResidentEmail||'').replace(/'/g,"\\'")}')">🔔 Send Reminder</button>`
+        : `<button class="card-send-btn" onclick="event.stopPropagation(); openEmailPrompt('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','', false)">✍ Send for Signature</button>`
+      ) : ''}
     </div>`;
   }).join('');
 }
@@ -632,7 +734,11 @@ function renderDetailView(overlay, record){
        </div>`
     : `<div class="sig-status-card sig-pending">
          <div class="sig-status-title">Awaiting Signature</div>
-         <button class="edit-btn" style="margin-top:10px;width:100%;" onclick="sendForSignature('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}')">✍ Send for Signature</button>
+         ${record.ResidentEmail ? `<div class="sig-status-meta">Sent to ${record.ResidentEmail}</div>` : ''}
+         <button class="edit-btn" style="margin-top:10px;width:100%;" onclick="${record.SignatureRequestedAt
+           ? `openReminderChoice('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','${(record.ResidentEmail||'').replace(/'/g,"\\'")}')`
+           : `openEmailPrompt('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','', false)`
+         }">${record.SignatureRequestedAt ? '🔔 Send Reminder' : '✍ Send for Signature'}</button>
        </div>`;
 
   overlay.innerHTML = `
