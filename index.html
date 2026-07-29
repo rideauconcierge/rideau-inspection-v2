@@ -750,11 +750,11 @@ function buildSignLink(submissionId){
 function openSignatureEmail(submissionId, roomLabel, modeLabel, unit, date){
   const link = buildSignLink(submissionId);
   const subject = `Signature Required - ${roomLabel} - ${date}`;
-  const body = `Hello,\n\nPlease review and sign the amenity inspection report below:\n\n`
-    + `Room: ${roomLabel}\nUnit: ${unit}\nType: ${modeLabel}\n\n`
-    + `Sign here: ${link}\n\n`
-    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\n\n`
-    + `Thank you,\nThe Rideau Concierge`;
+  const body = `Hello,\r\n\r\nPlease review and sign the amenity inspection report below:\r\n\r\n`
+    + `Room: ${roomLabel}\r\nUnit: ${unit}\r\nType: ${modeLabel}\r\n\r\n`
+    + `Sign here:\r\n${link}\r\n\r\n`
+    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\r\n\r\n`
+    + `Thank you,\r\nThe Rideau Concierge`;
   const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailto;
 }
