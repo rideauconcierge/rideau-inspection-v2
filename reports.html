@@ -126,6 +126,10 @@
     background:rgba(201,160,74,0.12);color:var(--gold-bright);font-size:11.5px;font-weight:700;
     cursor:pointer;font-family:'Inter',sans-serif;}
   .card-send-btn:hover{background:rgba(201,160,74,0.22);}
+  .card-sig-preview{margin-top:10px;background:var(--navy);border:1px solid var(--border);border-radius:7px;
+    padding:8px 10px;text-align:center;}
+  .card-sig-preview img{max-height:36px;max-width:100%;display:block;margin:0 auto;}
+  .card-sig-typed{font-family:'Dancing Script',cursive;font-size:22px;color:var(--gold-bright);padding:4px 10px;}
 
   .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
   .empty-state .es-icon{font-size:32px;margin-bottom:10px;}
@@ -459,11 +463,11 @@ function buildSignLink(submissionId){
 function sendForSignature(submissionId, roomLabel, modeLabel, unit, date){
   const link = buildSignLink(submissionId);
   const subject = `Signature Required - ${roomLabel} - ${date}`;
-  const body = `Hello,\n\nPlease review and sign the amenity inspection report below:\n\n`
-    + `Room: ${roomLabel}\nUnit: ${unit}\nType: ${modeLabel}\n\n`
-    + `Sign here: ${link}\n\n`
-    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\n\n`
-    + `Thank you,\nThe Rideau Concierge`;
+  const body = `Hello,\r\n\r\nPlease review and sign the amenity inspection report below:\r\n\r\n`
+    + `Room: ${roomLabel}\r\nUnit: ${unit}\r\nType: ${modeLabel}\r\n\r\n`
+    + `Sign here:\r\n${link}\r\n\r\n`
+    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\r\n\r\n`
+    + `Thank you,\r\nThe Rideau Concierge`;
   window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
@@ -486,6 +490,11 @@ function renderCards(){
     const isSigned = r.SignatureStatus === 'Signed';
     const modeLabel = r.Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
     const roomLabel = (ROOM_LABELS[r.Room] || r.Room).replace(/'/g, "\\'");
+    const signaturePreviewHtml = isSigned
+      ? (r.SignatureType === 'drawn' && r.SignatureImageURL
+          ? `<div class="card-sig-preview"><img src="${r.SignatureImageURL}" alt="Signature"></div>`
+          : `<div class="card-sig-preview card-sig-typed">${r.SignerName || ''}</div>`)
+      : '';
     return `<div class="rcard ${r.Mode==='post'?'post-mode':''}" onclick="openDetailById('${r.SubmissionID}')">
       <div class="rcard-top">
         <div class="rcard-room">${ROOM_LABELS[r.Room] || r.Room}</div>
@@ -501,6 +510,7 @@ function renderCards(){
         ${photoCount > 0 ? `<span class="flag-badge flag-photo">📷 ${photoCount}</span>` : ''}
         <span class="flag-badge ${isSigned?'flag-signed':'flag-pending'}">${isSigned?'✓ Signed':'Unsigned'}</span>
       </div>
+      ${signaturePreviewHtml}
       ${!isSigned ? `<button class="card-send-btn" onclick="event.stopPropagation(); sendForSignature('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}')">✍ Send for Signature</button>` : ''}
     </div>`;
   }).join('');
