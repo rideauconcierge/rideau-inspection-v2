@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Rideau — Inspection Sign-Off</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0b1826; --navy:#132a3e; --navy-light:#1c3a53; --navy-card:#17324a;
+    --gold:#c9a04a; --gold-bright:#e0bc6b;
+    --text:#eae6dc; --text-muted:#8fa1b3;
+    --ok:#5c9c7c; --ok-bg:rgba(92,156,124,0.16);
+    --warn:#c96a52; --warn-bg:rgba(201,106,82,0.16);
+    --border:rgba(201,160,74,0.22); --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--navy-deep);
+    background-image:radial-gradient(circle at 15% 0%, rgba(201,160,74,0.06), transparent 45%),
+                      radial-gradient(circle at 90% 10%, rgba(201,160,74,0.04), transparent 40%);
+    color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding:24px 16px 60px;}
+  .wrap{max-width:520px;margin:0 auto;}
+  header.top{text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+  .eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;font-weight:600;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:23px;margin:0;}
+  .sub{color:var(--text-muted);font-size:12.5px;margin-top:6px;}
+
+  .card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;}
+  .card-title{font-family:'Fraunces',serif;font-size:15px;font-weight:600;color:var(--gold-bright);margin-bottom:10px;}
+  .meta-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(201,160,74,0.08);}
+  .meta-row:last-child{border-bottom:none;}
+  .meta-row b{color:var(--text-muted);font-weight:500;}
+
+  .flag-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(201,160,74,0.08);font-size:13px;gap:10px;}
+  .flag-item:last-child{border-bottom:none;}
+  .flag-badge{font-size:10.5px;padding:3px 9px;border-radius:10px;font-weight:600;background:var(--warn-bg);color:var(--warn);white-space:nowrap;}
+  .flag-note{color:var(--text-muted);font-size:12px;margin-top:2px;}
+  .no-issues{color:var(--ok);font-size:13px;display:flex;align-items:center;gap:6px;}
+
+  .dcomments{background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:4px;}
+  .dphotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;margin-top:8px;}
+  .dphotos a img{width:100%;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);}
+
+  .field label{display:block;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .field input[type="text"]{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);
+    padding:11px 13px;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;box-sizing:border-box;}
+  .field input[type="text"]:focus{outline:none;border-color:var(--gold);}
+
+  .sig-tabs{display:flex;gap:8px;margin:16px 0 12px;}
+  .sig-tab{flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:var(--navy);
+    color:var(--text-muted);cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;transition:all .12s;}
+  .sig-tab.active{border-color:var(--gold);background:rgba(201,160,74,0.12);color:var(--gold-bright);}
+
+  #sigCanvas{width:100%;height:150px;background:var(--navy);border:1.5px solid var(--border);border-radius:8px;
+    touch-action:none;cursor:crosshair;display:block;}
+  .sig-clear{margin-top:8px;background:none;border:1px solid var(--border);color:var(--text-muted);
+    padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .sig-clear:hover{border-color:var(--warn);color:var(--warn);}
+
+  .typed-preview{background:var(--navy);border:1.5px dashed var(--border);border-radius:8px;padding:24px 16px;
+    text-align:center;font-family:'Dancing Script',cursive;font-size:34px;color:var(--gold-bright);min-height:70px;
+    display:flex;align-items:center;justify-content:center;}
+  .typed-note{color:var(--text-muted);font-size:11.5px;text-align:center;margin-top:8px;}
+
+  .confirm-check{display:flex;align-items:flex-start;gap:10px;margin:18px 0;font-size:12.5px;color:var(--text-muted);cursor:pointer;}
+  .confirm-check input{margin-top:2px;width:17px;height:17px;accent-color:var(--gold);flex-shrink:0;cursor:pointer;}
+
+  .submit-btn{width:100%;background:linear-gradient(135deg,var(--gold),#a67f34);color:var(--navy-deep);
+    border:none;padding:15px;border-radius:9px;font-size:14.5px;font-weight:700;cursor:pointer;
+    letter-spacing:.02em;font-family:'Inter',sans-serif;}
+  .submit-btn:hover{filter:brightness(1.08);}
+  .submit-btn:disabled{opacity:0.5;cursor:default;}
+
+  .hidden{display:none !important;}
+  .state-msg{text-align:center;padding:60px 20px;color:var(--text-muted);}
+  .state-msg .sm-icon{font-size:30px;margin-bottom:10px;}
+
+  .signed-panel{text-align:center;padding:20px 10px;}
+  .signed-icon{font-size:36px;margin-bottom:10px;}
+  .signed-title{font-family:'Fraunces',serif;font-size:19px;font-weight:600;color:var(--ok);margin-bottom:6px;}
+  .signed-meta{color:var(--text-muted);font-size:13px;}
+  .signed-sig-img{max-width:220px;margin:16px auto 0;display:block;}
+  .signed-sig-typed{font-family:'Dancing Script',cursive;font-size:32px;color:var(--gold-bright);margin-top:14px;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy-card);
+    border:1px solid var(--gold);color:var(--gold-bright);padding:12px 22px;border-radius:8px;font-size:13px;
+    opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;max-width:90vw;text-align:center;}
+  .toast.show{opacity:1;bottom:32px;}
+
+  .watermark{text-align:center;color:var(--text-muted);font-size:10px;margin-top:26px;letter-spacing:.05em;
+    text-transform:uppercase;opacity:0.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
+    <h1>Inspection Sign-Off</h1>
+    <div class="sub" id="pageSub">Loading report...</div>
+  </header>
+
+  <div id="app"></div>
+  <div class="watermark">Designed by Shrutik</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz-69e-XALVtmU1bJ2WpPpUbs39KVniUmsxNzDkxlH8LxErxg7qEWlytviprtTAJvL6xQ/exec";
+const ROOM_LABELS = {
+  canal_lounge: "Canal Lounge & Patio",
+  guest_suite: "Guest Suite",
+  stadium_box: "Stadium Box",
+  stadium_kitchen: "Stadium Kitchen",
+  stadium_lounge: "Stadium Lounge"
+};
+
+const params = new URLSearchParams(window.location.search);
+const SUBMISSION_ID = params.get('id');
+const app = document.getElementById('app');
+let record = null;
+let sigMode = 'draw';
+let hasSignature = false;
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+async function init(){
+  if (!SUBMISSION_ID){
+    app.innerHTML = `<div class="state-msg"><div class="sm-icon">⚠</div>No report was specified. Please use the link from your email.</div>`;
+    document.getElementById('pageSub').textContent = '';
+    return;
+  }
+  try {
+    const res = await fetch(`${WEB_APP_URL}?submissionId=${encodeURIComponent(SUBMISSION_ID)}`);
+    const json = await res.json();
+    if (!json.success || !json.data.length){
+      app.innerHTML = `<div class="state-msg"><div class="sm-icon">⚠</div>This report could not be found. Please check the link or contact the concierge.</div>`;
+      document.getElementById('pageSub').textContent = '';
+      return;
+    }
+    record = json.data[0];
+    render();
+  } catch (err) {
+    app.innerHTML = `<div class="state-msg"><div class="sm-icon">⚠</div>Couldn't load the report. Check your connection and reload the page.</div>`;
+  }
+}
+
+function countIssues(checklist){
+  if (!Array.isArray(checklist)) return [];
+  const flagged = [];
+  checklist.forEach(grp => (grp.items||[]).forEach(it => {
+    if (it.issue) flagged.push({ name: it.name, note: it.note || '' });
+    if (grp.kind === 'security' && it.unlocked) flagged.push({ name: it.name, note: 'Left unlocked' });
+  }));
+  return flagged;
+}
+
+function render(){
+  const modeLabel = record.Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
+  document.getElementById('pageSub').textContent = `${ROOM_LABELS[record.Room] || record.Room} — ${modeLabel}`;
+
+  if (record.SignatureStatus === 'Signed'){
+    renderAlreadySigned();
+    return;
+  }
+
+  const flagged = countIssues(record.ChecklistJSON);
+  const flaggedHtml = flagged.length
+    ? flagged.map(f => `<div class="flag-item"><span>${f.name}</span><span class="flag-badge">${f.note || 'Flagged'}</span></div>`).join('')
+    : `<div class="no-issues">✓ No issues were flagged during this inspection</div>`;
+
+  const photosHtml = (record.PhotoURLs||[]).length
+    ? `<div class="dphotos">${record.PhotoURLs.map(u=>`<a href="${u}" target="_blank"><img src="${u}"></a>`).join('')}</div>`
+    : '';
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="card-title">Report Summary</div>
+      <div class="meta-row"><b>Room</b><span>${ROOM_LABELS[record.Room] || record.Room}</span></div>
+      <div class="meta-row"><b>Unit</b><span>${record.Unit || '—'}</span></div>
+      <div class="meta-row"><b>Date</b><span>${record.Date || '—'}</span></div>
+      <div class="meta-row"><b>Concierge</b><span>${record.Concierge || '—'}</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Condition Noted</div>
+      ${flaggedHtml}
+      ${record.Comments ? `<div class="dcomments">${record.Comments}</div>` : ''}
+      ${photosHtml}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Your Signature</div>
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="signerName" placeholder="Your full name" oninput="updateTypedPreview()">
+      </div>
+
+      <div class="sig-tabs">
+        <button type="button" class="sig-tab active" id="tabDraw" onclick="setSigMode('draw')">Draw Signature</button>
+        <button type="button" class="sig-tab" id="tabType" onclick="setSigMode('type')">Type to Sign</button>
+      </div>
+
+      <div id="drawPanel">
+        <canvas id="sigCanvas"></canvas>
+        <button type="button" class="sig-clear" onclick="clearSignature()">Clear</button>
+      </div>
+      <div id="typePanel" class="hidden">
+        <div class="typed-preview" id="typedPreview">Your name will appear here</div>
+        <div class="typed-note">Your typed name above will serve as your signature.</div>
+      </div>
+
+      <label class="confirm-check">
+        <input type="checkbox" id="confirmCheck">
+        I confirm this report accurately reflects the condition of the room.
+      </label>
+
+      <button class="submit-btn" id="submitBtn" onclick="submitSignature()">Sign &amp; Submit</button>
+    </div>
+  `;
+
+  setupCanvas();
+}
+
+function renderAlreadySigned(){
+  const signedDate = record.SignedAt ? new Date(record.SignedAt).toLocaleString('en-CA', {dateStyle:'medium', timeStyle:'short'}) : '';
+  const sigHtml = record.SignatureType === 'drawn' && record.SignatureImageURL
+    ? `<img class="signed-sig-img" src="${record.SignatureImageURL}">`
+    : `<div class="signed-sig-typed">${record.SignerName || ''}</div>`;
+
+  app.innerHTML = `
+    <div class="card signed-panel">
+      <div class="signed-icon">✓</div>
+      <div class="signed-title">Already Signed</div>
+      <div class="signed-meta">Signed by <b>${record.SignerName || 'resident'}</b>${signedDate ? ` on ${signedDate}` : ''}</div>
+      ${sigHtml}
+    </div>
+  `;
+}
+
+function setSigMode(mode){
+  sigMode = mode;
+  document.getElementById('tabDraw').classList.toggle('active', mode === 'draw');
+  document.getElementById('tabType').classList.toggle('active', mode === 'type');
+  document.getElementById('drawPanel').classList.toggle('hidden', mode !== 'draw');
+  document.getElementById('typePanel').classList.toggle('hidden', mode !== 'type');
+}
+
+function updateTypedPreview(){
+  const name = document.getElementById('signerName').value.trim();
+  const preview = document.getElementById('typedPreview');
+  if (preview) preview.textContent = name || 'Your name will appear here';
+}
+
+// =========================================================
+// SIGNATURE CANVAS
+// =========================================================
+let canvas, ctx, drawing = false;
+
+function setupCanvas(){
+  canvas = document.getElementById('sigCanvas');
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = rect.height * 2;
+  ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  ctx.strokeStyle = '#eae6dc';
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  canvas.addEventListener('pointerdown', e => {
+    drawing = true;
+    hasSignature = true;
+    const p = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  });
+  canvas.addEventListener('pointerup', () => drawing = false);
+  canvas.addEventListener('pointerleave', () => drawing = false);
+}
+
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function clearSignature(){
+  const rect = canvas.getBoundingClientRect();
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  hasSignature = false;
+}
+
+// =========================================================
+// SUBMIT
+// =========================================================
+async function submitSignature(){
+  const name = document.getElementById('signerName').value.trim();
+  const confirmed = document.getElementById('confirmCheck').checked;
+
+  if (!name){ toast('Please enter your full name'); return; }
+  if (sigMode === 'draw' && !hasSignature){ toast('Please draw your signature'); return; }
+  if (!confirmed){ toast('Please confirm the checkbox before signing'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const payload = {
+    action: 'sign',
+    submissionId: SUBMISSION_ID,
+    signerName: name,
+    signatureType: sigMode,
+    signatureImage: sigMode === 'draw' ? canvas.toDataURL('image/png').split(',')[1] : ''
+  };
+
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.success){
+      record.SignatureStatus = 'Signed';
+      record.SignerName = name;
+      record.SignatureType = sigMode;
+      record.SignedAt = new Date().toISOString();
+      renderAlreadySigned();
+      toast('Signature submitted — thank you');
+    } else {
+      toast('Error: ' + (result.error || 'submission failed'));
+      btn.disabled = false;
+      btn.textContent = 'Sign & Submit';
+    }
+  } catch (err) {
+    toast('Network error - please try again');
+    btn.disabled = false;
+    btn.textContent = 'Sign & Submit';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
