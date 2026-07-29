@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Rideau — Inspection Reports</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
 <style>
   :root{
     --navy-deep:#0b1826; --navy:#132a3e; --navy-light:#1c3a53; --navy-card:#17324a;
@@ -120,6 +120,12 @@
   .flag-badge{font-size:10.5px;padding:3px 9px;border-radius:10px;font-weight:600;}
   .flag-issue{background:var(--warn-bg);color:var(--warn);}
   .flag-photo{background:rgba(201,160,74,0.12);color:var(--gold-bright);}
+  .flag-signed{background:var(--ok-bg);color:var(--ok);}
+  .flag-pending{background:var(--navy);color:var(--text-muted);}
+  .card-send-btn{width:100%;margin-top:10px;padding:8px;border-radius:7px;border:1px solid var(--gold);
+    background:rgba(201,160,74,0.12);color:var(--gold-bright);font-size:11.5px;font-weight:700;
+    cursor:pointer;font-family:'Inter',sans-serif;}
+  .card-send-btn:hover{background:rgba(201,160,74,0.22);}
 
   .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
   .empty-state .es-icon{font-size:32px;margin-bottom:10px;}
@@ -179,6 +185,14 @@
     padding:8px 10px;border-radius:6px;font-size:12px;}
 
   .edit-history{max-height:220px;overflow-y:auto;}
+  .sig-status-card{border-radius:9px;padding:14px 16px;margin-bottom:16px;}
+  .sig-status-card.sig-signed{background:var(--ok-bg);border:1px solid var(--ok);}
+  .sig-status-card.sig-pending{background:var(--navy-card);border:1px solid var(--border);}
+  .sig-status-title{font-family:'Fraunces',serif;font-size:14px;font-weight:600;}
+  .sig-signed .sig-status-title{color:var(--ok);}
+  .sig-status-meta{color:var(--text-muted);font-size:12px;margin-top:4px;}
+  .sig-image-preview{max-width:160px;margin-top:10px;display:block;}
+  .sig-typed-preview{font-family:'Dancing Script',cursive;font-size:26px;color:var(--gold-bright);margin-top:8px;}
   .eh-entry{background:var(--navy-card);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:6px;font-size:12px;}
   .eh-time{color:var(--gold-bright);font-weight:600;margin-bottom:3px;}
   .eh-summary{color:var(--text-muted);word-break:break-word;}
@@ -434,6 +448,25 @@ function countIssues(checklist){
   return n;
 }
 
+// =========================================================
+// SEND FOR SIGNATURE
+// =========================================================
+function buildSignLink(submissionId){
+  const base = window.location.href.replace(/[^/]*$/, '');
+  return base + 'sign.html?id=' + encodeURIComponent(submissionId);
+}
+
+function sendForSignature(submissionId, roomLabel, modeLabel, unit, date){
+  const link = buildSignLink(submissionId);
+  const subject = `Signature Required - ${roomLabel} - ${date}`;
+  const body = `Hello,\n\nPlease review and sign the amenity inspection report below:\n\n`
+    + `Room: ${roomLabel}\nUnit: ${unit}\nType: ${modeLabel}\n\n`
+    + `Sign here: ${link}\n\n`
+    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\n\n`
+    + `Thank you,\nThe Rideau Concierge`;
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function renderCards(){
   const data = applyFilters();
   const grid = document.getElementById('card-grid');
@@ -450,6 +483,9 @@ function renderCards(){
   grid.innerHTML = data.map((r, idx) => {
     const issues = countIssues(r.ChecklistJSON);
     const photoCount = (r.PhotoURLs||[]).length;
+    const isSigned = r.SignatureStatus === 'Signed';
+    const modeLabel = r.Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
+    const roomLabel = (ROOM_LABELS[r.Room] || r.Room).replace(/'/g, "\\'");
     return `<div class="rcard ${r.Mode==='post'?'post-mode':''}" onclick="openDetailById('${r.SubmissionID}')">
       <div class="rcard-top">
         <div class="rcard-room">${ROOM_LABELS[r.Room] || r.Room}</div>
@@ -463,7 +499,9 @@ function renderCards(){
       <div class="rcard-flags">
         ${issues > 0 ? `<span class="flag-badge flag-issue">⚠ ${issues} issue${issues>1?'s':''}</span>` : ''}
         ${photoCount > 0 ? `<span class="flag-badge flag-photo">📷 ${photoCount}</span>` : ''}
+        <span class="flag-badge ${isSigned?'flag-signed':'flag-pending'}">${isSigned?'✓ Signed':'Unsigned'}</span>
       </div>
+      ${!isSigned ? `<button class="card-send-btn" onclick="event.stopPropagation(); sendForSignature('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}')">✍ Send for Signature</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -573,6 +611,20 @@ function renderDetailView(overlay, record){
          </div>`).join('')}</div>`
     : '';
 
+  const modeLabelDetail = record.Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
+  const roomLabelDetail = (ROOM_LABELS[record.Room] || record.Room).replace(/'/g, "\\'");
+  const signatureHtml = record.SignatureStatus === 'Signed'
+    ? `<div class="sig-status-card sig-signed">
+         <div class="sig-status-title">✓ Signed</div>
+         <div class="sig-status-meta">${record.SignerName || ''}${record.SignedAt ? ' · ' + new Date(record.SignedAt).toLocaleString('en-CA', {dateStyle:'medium', timeStyle:'short'}) : ''}</div>
+         ${record.SignatureType === 'drawn' && record.SignatureImageURL ? `<img class="sig-image-preview" src="${record.SignatureImageURL}">` : ''}
+         ${record.SignatureType === 'typed' ? `<div class="sig-typed-preview">${record.SignerName || ''}</div>` : ''}
+       </div>`
+    : `<div class="sig-status-card sig-pending">
+         <div class="sig-status-title">Awaiting Signature</div>
+         <button class="edit-btn" style="margin-top:10px;width:100%;" onclick="sendForSignature('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}')">✍ Send for Signature</button>
+       </div>`;
+
   overlay.innerHTML = `
     <div class="detail-panel">
       <button class="detail-close" onclick="closeDetail()">✕</button>
@@ -589,6 +641,8 @@ function renderDetailView(overlay, record){
       <div class="action-row">
         <button class="edit-btn" onclick="enterEditMode()">✎ Edit Report</button>
       </div>
+
+      ${signatureHtml}
 
       ${groupsHtml}
 
