@@ -32,11 +32,17 @@
   .meta-row:last-child{border-bottom:none;}
   .meta-row b{color:var(--text-muted);font-weight:500;}
 
-  .flag-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(201,160,74,0.08);font-size:13px;gap:10px;}
-  .flag-item:last-child{border-bottom:none;}
-  .flag-badge{font-size:10.5px;padding:3px 9px;border-radius:10px;font-weight:600;background:var(--warn-bg);color:var(--warn);white-space:nowrap;}
-  .flag-note{color:var(--text-muted);font-size:12px;margin-top:2px;}
-  .no-issues{color:var(--ok);font-size:13px;display:flex;align-items:center;gap:6px;}
+  .dgroup{margin-bottom:14px;}
+  .dgroup-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold-bright);margin-bottom:7px;font-weight:600;}
+  .ditem{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(201,160,74,0.08);font-size:13px;gap:10px;}
+  .ditem:last-child{border-bottom:none;}
+  .ditem-name{flex:1;}
+  .ditem-note{font-size:11.5px;color:var(--warn);font-style:italic;margin-top:2px;}
+  .ditem-status{font-size:11px;padding:3px 9px;border-radius:10px;font-weight:600;white-space:nowrap;}
+  .status-ok{background:var(--ok-bg);color:var(--ok);}
+  .status-issue{background:var(--warn-bg);color:var(--warn);}
+  .status-neutral{background:var(--navy);color:var(--text-muted);}
+  .status-select{background:rgba(201,160,74,0.16);color:var(--gold-bright);}
 
   .dcomments{background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:4px;}
   .dphotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;margin-top:8px;}
@@ -82,6 +88,8 @@
   .signed-meta{color:var(--text-muted);font-size:13px;}
   .signed-sig-img{max-width:220px;margin:16px auto 0;display:block;}
   .signed-sig-typed{font-family:'Dancing Script',cursive;font-size:32px;color:var(--gold-bright);margin-top:14px;}
+  .back-link{color:var(--gold);font-size:12.5px;text-decoration:none;border:1px solid var(--border);padding:8px 18px;border-radius:14px;display:inline-block;}
+  .back-link:hover{border-color:var(--gold);}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy-card);
     border:1px solid var(--gold);color:var(--gold-bright);padding:12px 22px;border-radius:8px;font-size:13px;
@@ -150,14 +158,43 @@ async function init(){
   }
 }
 
-function countIssues(checklist){
-  if (!Array.isArray(checklist)) return [];
-  const flagged = [];
-  checklist.forEach(grp => (grp.items||[]).forEach(it => {
-    if (it.issue) flagged.push({ name: it.name, note: it.note || '' });
-    if (grp.kind === 'security' && it.unlocked) flagged.push({ name: it.name, note: 'Left unlocked' });
-  }));
-  return flagged;
+function renderChecklistFull(record){
+  const checklist = Array.isArray(record.ChecklistJSON) ? record.ChecklistJSON : [];
+  const mode = record.Mode;
+  return checklist.map(grp => {
+    const itemsHtml = grp.items.map(it => {
+      let statusHtml = '';
+      if (grp.kind === 'task'){
+        statusHtml = `<span class="ditem-status ${it.done?'status-ok':'status-neutral'}">${it.done?'Done':'Not done'}</span>`;
+      } else if (grp.kind === 'security'){
+        if (it.unlocked) statusHtml = `<span class="ditem-status status-select">Unlocked</span>`;
+        else if (it.locked) statusHtml = `<span class="ditem-status status-select">Locked</span>`;
+        else statusHtml = `<span class="ditem-status status-neutral">Not set</span>`;
+      } else if (grp.kind === 'condition'){
+        if (mode === 'pre'){
+          const label = it.okLabel || grp.okLabel || 'Clean';
+          statusHtml = it.ok
+            ? `<span class="ditem-status status-ok">${label}</span>`
+            : `<span class="ditem-status status-neutral">Not confirmed</span>`;
+        } else {
+          statusHtml = it.issue
+            ? `<span class="ditem-status status-issue">Damage</span>`
+            : (it.noDamage ? `<span class="ditem-status status-ok">No Damage</span>` : `<span class="ditem-status status-neutral">Not reviewed</span>`);
+        }
+      } else if (grp.kind === 'supply'){
+        const qtySet = it.restockedQty !== null && it.restockedQty !== undefined;
+        statusHtml = `<span class="ditem-status ${qtySet?'status-select':'status-neutral'}">${qtySet?('Qty: '+it.restockedQty):'Not set'}</span>`;
+      } else if (grp.kind === 'collect'){
+        if ('provided' in it) statusHtml = `<span class="ditem-status ${it.provided?'status-ok':'status-neutral'}">${it.provided?'Provided':'—'}</span>${it.fobNumber?` <span class="ditem-status status-neutral">#${it.fobNumber}</span>`:''}`;
+        else if ('returned' in it) statusHtml = `<span class="ditem-status ${it.returned?'status-ok':'status-neutral'}">${it.returned?'Returned':'—'}</span>`;
+      }
+      return `<div class="ditem">
+        <div class="ditem-name">${it.name}${it.note ? `<div class="ditem-note">${it.note}</div>` : ''}</div>
+        ${statusHtml}
+      </div>`;
+    }).join('');
+    return `<div class="dgroup"><div class="dgroup-title">${grp.title}</div>${itemsHtml}</div>`;
+  }).join('');
 }
 
 function render(){
@@ -169,10 +206,7 @@ function render(){
     return;
   }
 
-  const flagged = countIssues(record.ChecklistJSON);
-  const flaggedHtml = flagged.length
-    ? flagged.map(f => `<div class="flag-item"><span>${f.name}</span><span class="flag-badge">${f.note || 'Flagged'}</span></div>`).join('')
-    : `<div class="no-issues">✓ No issues were flagged during this inspection</div>`;
+  const checklistHtml = renderChecklistFull(record);
 
   const photosHtml = (record.PhotoURLs||[]).length
     ? `<div class="dphotos">${record.PhotoURLs.map(u=>`<a href="${u}" target="_blank"><img src="${u}"></a>`).join('')}</div>`
@@ -188,10 +222,10 @@ function render(){
     </div>
 
     <div class="card">
-      <div class="card-title">Condition Noted</div>
-      ${flaggedHtml}
-      ${record.Comments ? `<div class="dcomments">${record.Comments}</div>` : ''}
-      ${photosHtml}
+      <div class="card-title">Full Inspection Report</div>
+      ${checklistHtml}
+      ${record.Comments ? `<div class="dgroup-title" style="margin-top:14px;">Comments</div><div class="dcomments">${record.Comments}</div>` : ''}
+      ${photosHtml ? `<div class="dgroup-title" style="margin-top:14px;">Photos</div>${photosHtml}` : ''}
     </div>
 
     <div class="card">
@@ -239,6 +273,9 @@ function renderAlreadySigned(){
       <div class="signed-title">Already Signed</div>
       <div class="signed-meta">Signed by <b>${record.SignerName || 'resident'}</b>${signedDate ? ` on ${signedDate}` : ''}</div>
       ${sigHtml}
+    </div>
+    <div style="text-align:center;margin-top:6px;">
+      <a href="reports.html" class="back-link">&larr; Back to Reports</a>
     </div>
   `;
 }
