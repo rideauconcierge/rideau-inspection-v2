@@ -483,22 +483,26 @@ function signInPersonFromCard(submissionId){
 }
 
 async function sendSignatureRequest(submissionId, roomLabel, modeLabel, unit, date, email, isReminder){
-  toast('Sending...');
   try {
-    const res = await fetch(WEB_APP_URL, {
+    await fetch(WEB_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'requestSignature', submissionId, residentEmail: email })
+      body: JSON.stringify({ action: 'requestSignature', submissionId })
     });
-    const result = await res.json();
-    if (result.success){
-      toast((isReminder ? 'Reminder sent to ' : 'Signature request sent to ') + email);
-    } else {
-      toast('Error: ' + (result.error || 'send failed'));
-    }
-  } catch (err) {
-    toast('Network error - could not send the email');
-  }
+  } catch (err) { /* still open the email draft even if marking the status failed */ }
+
+  const link = buildSignLink(submissionId);
+  const subject = (isReminder ? 'Reminder: ' : '') + `Signature Required - ${roomLabel} - ${date}`;
+  const intro = isReminder
+    ? `Hello,\r\n\r\nThis is a friendly reminder that we haven't yet received your signature for the amenity inspection report below:\r\n\r\n`
+    : `Hello,\r\n\r\nPlease review and sign the amenity inspection report below:\r\n\r\n`;
+  const body = intro
+    + `Room: ${roomLabel}\r\nUnit: ${unit}\r\nType: ${modeLabel}\r\n\r\n`
+    + `Sign here:\r\n${link}\r\n\r\n`
+    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\r\n\r\n`
+    + `Thank you,\r\nThe Rideau Concierge`;
+  window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
   setTimeout(fetchData, 800); // refresh so the card switches to "Send Reminder" state
 }
 
@@ -507,8 +511,8 @@ function openEmailPrompt(submissionId, roomLabel, modeLabel, unit, date, existin
   overlay.id = 'email-prompt-overlay';
   overlay.innerHTML = `
     <div class="email-prompt-card">
-      <div class="ep-title">${isReminder ? 'Send Reminder to a Different Email' : "Resident's Email"}</div>
-      <div class="ep-desc">${isReminder ? 'This will also update the email saved for future reminders.' : 'Enter the email to send the signature request to.'}</div>
+      <div class="ep-title">${isReminder ? 'Send Reminder' : "Resident's Email"}</div>
+      <div class="ep-desc">Enter the email to send the ${isReminder ? 'reminder' : 'signature request'} to. This is never saved - it's used only to open your email draft.</div>
       <input type="email" id="ep-email-input" value="${existingEmail || ''}" placeholder="resident@example.com">
       <div class="ep-actions">
         <button class="ep-btn ep-cancel" onclick="closeEmailPrompt()">Cancel</button>
@@ -536,40 +540,6 @@ function confirmEmailPrompt(){
   const d = el.dataset;
   el.remove();
   sendSignatureRequest(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date, email, d.isReminder === '1');
-}
-
-function openReminderChoice(submissionId, roomLabel, modeLabel, unit, date, currentEmail){
-  const overlay = document.createElement('div');
-  overlay.id = 'email-prompt-overlay';
-  overlay.innerHTML = `
-    <div class="email-prompt-card">
-      <div class="ep-title">Send Reminder</div>
-      <div class="ep-desc">On file: <b>${currentEmail || '(no email saved)'}</b></div>
-      <div class="ep-actions" style="flex-direction:column;">
-        <button class="ep-btn ep-send" style="width:100%;" ${!currentEmail?'disabled':''} onclick="reminderSameEmail()">Send to Same Email</button>
-        <button class="ep-btn ep-cancel" style="width:100%;margin-top:8px;" onclick="reminderDifferentEmail()">Use a Different Email</button>
-      </div>
-    </div>
-  `;
-  overlay.dataset.submissionId = submissionId;
-  overlay.dataset.roomLabel = roomLabel;
-  overlay.dataset.modeLabel = modeLabel;
-  overlay.dataset.unit = unit;
-  overlay.dataset.date = date;
-  overlay.dataset.email = currentEmail || '';
-  document.body.appendChild(overlay);
-}
-function reminderSameEmail(){
-  const el = document.getElementById('email-prompt-overlay');
-  const d = el.dataset;
-  el.remove();
-  sendSignatureRequest(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date, d.email, true);
-}
-function reminderDifferentEmail(){
-  const el = document.getElementById('email-prompt-overlay');
-  const d = el.dataset;
-  el.remove();
-  openEmailPrompt(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date, '', true);
 }
 
 function renderCards(){
@@ -615,7 +585,7 @@ function renderCards(){
       ${!isSigned ? `<div class="card-sig-actions">
         <button class="card-send-btn card-in-person-btn" onclick="event.stopPropagation(); signInPersonFromCard('${r.SubmissionID}')">✍ In Person</button>
         ${r.SignatureRequestedAt
-          ? `<button class="card-send-btn card-reminder-btn" onclick="event.stopPropagation(); openReminderChoice('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','${(r.ResidentEmail||'').replace(/'/g,"\\'")}')">🔔 Reminder</button>`
+          ? `<button class="card-send-btn card-reminder-btn" onclick="event.stopPropagation(); openEmailPrompt('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','', true)">🔔 Reminder</button>`
           : `<button class="card-send-btn" onclick="event.stopPropagation(); openEmailPrompt('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','', false)">📧 Email</button>`
         }
       </div>` : ''}
@@ -739,13 +709,9 @@ function renderDetailView(overlay, record){
        </div>`
     : `<div class="sig-status-card sig-pending">
          <div class="sig-status-title">Awaiting Signature</div>
-         ${record.ResidentEmail ? `<div class="sig-status-meta">Sent to ${record.ResidentEmail}</div>` : ''}
          <div class="card-sig-actions" style="margin-top:10px;">
            <button class="edit-btn card-in-person-btn" onclick="signInPersonFromCard('${record.SubmissionID}')">✍ In Person</button>
-           <button class="edit-btn" onclick="${record.SignatureRequestedAt
-             ? `openReminderChoice('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','${(record.ResidentEmail||'').replace(/'/g,"\\'")}')`
-             : `openEmailPrompt('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','', false)`
-           }">${record.SignatureRequestedAt ? '🔔 Reminder' : '📧 Email'}</button>
+           <button class="edit-btn" onclick="openEmailPrompt('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','', ${record.SignatureRequestedAt ? 'true' : 'false'})">${record.SignatureRequestedAt ? '🔔 Reminder' : '📧 Email'}</button>
          </div>
        </div>`;
 
