@@ -135,6 +135,18 @@
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy-card);border:1px solid var(--gold);color:var(--gold-bright);padding:12px 22px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;max-width:90vw;text-align:center;}
   .toast.show{opacity:1;bottom:32px;}
 
+  #send-prompt-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.75);z-index:180;
+    display:flex;align-items:center;justify-content:center;padding:20px;}
+  .send-prompt-card{background:var(--navy-card);border:1px solid var(--border);border-radius:14px;
+    padding:28px 26px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+  .sp-icon{font-size:28px;margin-bottom:8px;}
+  .sp-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin-bottom:6px;}
+  .sp-desc{color:var(--text-muted);font-size:12.5px;margin-bottom:20px;line-height:1.5;}
+  .sp-actions{display:flex;gap:10px;}
+  .sp-btn{flex:1;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;}
+  .sp-later{background:var(--navy);border:1px solid var(--border);color:var(--text-muted);}
+  .sp-now{background:linear-gradient(135deg,var(--gold),#a67f34);border:none;color:var(--navy-deep);}
+
   /* ---- SINGLE PERSISTENT LOGO: floats from center-screen to a docked
      top position and stays there. Page content is hidden until it lands. ---- */
   #siteLogo{position:fixed;z-index:150;top:50%;left:50%;
@@ -713,7 +725,8 @@ async function submitInspection(){
 
     if (result.success){
       toast('Submitted — saved to the sheet');
-      setTimeout(() => renderRoomSelect(), 1200);
+      const modeLabel = state.mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
+      setTimeout(() => showSendPrompt(result.submissionId, r.label, modeLabel, unit, date), 700);
     } else {
       toast('Error: ' + (result.error || 'submission failed'));
       btn.disabled = false;
@@ -724,6 +737,60 @@ async function submitInspection(){
     btn.disabled = false;
     btn.textContent = 'Submit ' + (state.mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection');
   }
+}
+
+// =========================================================
+// SEND FOR SIGNATURE
+// =========================================================
+function buildSignLink(submissionId){
+  const base = window.location.href.replace(/[^/]*$/, '');
+  return base + 'sign.html?id=' + encodeURIComponent(submissionId);
+}
+
+function openSignatureEmail(submissionId, roomLabel, modeLabel, unit, date){
+  const link = buildSignLink(submissionId);
+  const subject = `Signature Required - ${roomLabel} - ${date}`;
+  const body = `Hello,\n\nPlease review and sign the amenity inspection report below:\n\n`
+    + `Room: ${roomLabel}\nUnit: ${unit}\nType: ${modeLabel}\n\n`
+    + `Sign here: ${link}\n\n`
+    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\n\n`
+    + `Thank you,\nThe Rideau Concierge`;
+  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+}
+
+function showSendPrompt(submissionId, roomLabel, modeLabel, unit, date){
+  const overlay = document.createElement('div');
+  overlay.id = 'send-prompt-overlay';
+  overlay.innerHTML = `
+    <div class="send-prompt-card">
+      <div class="sp-icon">✍️</div>
+      <div class="sp-title">Send for Signature?</div>
+      <div class="sp-desc">The resident can sign this report digitally — no hardcopy needed.</div>
+      <div class="sp-actions">
+        <button class="sp-btn sp-later" onclick="closeSendPrompt()">Later</button>
+        <button class="sp-btn sp-now" onclick="sendNowFromPrompt()">Send Now</button>
+      </div>
+    </div>
+  `;
+  overlay.dataset.submissionId = submissionId;
+  overlay.dataset.roomLabel = roomLabel;
+  overlay.dataset.modeLabel = modeLabel;
+  overlay.dataset.unit = unit;
+  overlay.dataset.date = date;
+  document.body.appendChild(overlay);
+}
+function closeSendPrompt(){
+  const el = document.getElementById('send-prompt-overlay');
+  if (el) el.remove();
+  renderRoomSelect();
+}
+function sendNowFromPrompt(){
+  const el = document.getElementById('send-prompt-overlay');
+  const d = el.dataset;
+  openSignatureEmail(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date);
+  el.remove();
+  renderRoomSelect();
 }
 
 renderRoomSelect();
