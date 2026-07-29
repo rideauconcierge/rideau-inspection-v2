@@ -147,6 +147,20 @@
   .sp-later{background:var(--navy);border:1px solid var(--border);color:var(--text-muted);}
   .sp-now{background:linear-gradient(135deg,var(--gold),#a67f34);border:none;color:var(--navy-deep);}
 
+  #email-prompt-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.8);z-index:210;
+    display:flex;align-items:center;justify-content:center;padding:20px;}
+  .email-prompt-card{background:var(--navy-card);border:1px solid var(--border);border-radius:14px;
+    padding:26px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+  .ep-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin-bottom:6px;}
+  .ep-desc{color:var(--text-muted);font-size:12px;margin-bottom:16px;line-height:1.5;}
+  #ep-email-input{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);
+    padding:11px 13px;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;box-sizing:border-box;margin-bottom:16px;}
+  #ep-email-input:focus{outline:none;border-color:var(--gold);}
+  .ep-actions{display:flex;gap:10px;}
+  .ep-btn{flex:1;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;}
+  .ep-cancel{background:var(--navy);border:1px solid var(--border);color:var(--text-muted);}
+  .ep-send{background:linear-gradient(135deg,var(--gold),#a67f34);border:none;color:var(--navy-deep);}
+
   /* ---- SINGLE PERSISTENT LOGO: floats from center-screen to a docked
      top position and stays there. Page content is hidden until it lands. ---- */
   #siteLogo{position:fixed;z-index:150;top:50%;left:50%;
@@ -747,7 +761,7 @@ function buildSignLink(submissionId){
   return base + 'sign.html?id=' + encodeURIComponent(submissionId);
 }
 
-function openSignatureEmail(submissionId, roomLabel, modeLabel, unit, date){
+function openSignatureEmail(submissionId, roomLabel, modeLabel, unit, date, email){
   const link = buildSignLink(submissionId);
   const subject = `Signature Required - ${roomLabel} - ${date}`;
   const body = `Hello,\r\n\r\nPlease review and sign the amenity inspection report below:\r\n\r\n`
@@ -755,7 +769,7 @@ function openSignatureEmail(submissionId, roomLabel, modeLabel, unit, date){
     + `Sign here:\r\n${link}\r\n\r\n`
     + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\r\n\r\n`
     + `Thank you,\r\nThe Rideau Concierge`;
-  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const mailto = `mailto:${encodeURIComponent(email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailto;
 }
 
@@ -787,9 +801,55 @@ function closeSendPrompt(){
 }
 function sendNowFromPrompt(){
   const el = document.getElementById('send-prompt-overlay');
-  const d = el.dataset;
-  openSignatureEmail(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date);
+  const d = { submissionId: el.dataset.submissionId, roomLabel: el.dataset.roomLabel,
+    modeLabel: el.dataset.modeLabel, unit: el.dataset.unit, date: el.dataset.date };
   el.remove();
+  openEmailCapturePrompt(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date);
+}
+
+function openEmailCapturePrompt(submissionId, roomLabel, modeLabel, unit, date){
+  const overlay = document.createElement('div');
+  overlay.id = 'email-prompt-overlay';
+  overlay.innerHTML = `
+    <div class="email-prompt-card">
+      <div class="ep-title">Resident's Email</div>
+      <div class="ep-desc">Enter the email to send the signature request to.</div>
+      <input type="email" id="ep-email-input" placeholder="resident@example.com">
+      <div class="ep-actions">
+        <button class="ep-btn ep-cancel" onclick="closeEmailCapturePrompt()">Cancel</button>
+        <button class="ep-btn ep-send" onclick="confirmEmailCapturePrompt()">Send</button>
+      </div>
+    </div>
+  `;
+  overlay.dataset.submissionId = submissionId;
+  overlay.dataset.roomLabel = roomLabel;
+  overlay.dataset.modeLabel = modeLabel;
+  overlay.dataset.unit = unit;
+  overlay.dataset.date = date;
+  document.body.appendChild(overlay);
+  document.getElementById('ep-email-input').focus();
+}
+function closeEmailCapturePrompt(){
+  const el = document.getElementById('email-prompt-overlay');
+  if (el) el.remove();
+  renderRoomSelect();
+}
+async function confirmEmailCapturePrompt(){
+  const email = document.getElementById('ep-email-input').value.trim();
+  if (!email){ toast('Please enter an email address'); return; }
+  const el = document.getElementById('email-prompt-overlay');
+  const d = el.dataset;
+  el.remove();
+
+  try {
+    await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'requestSignature', submissionId: d.submissionId, residentEmail: email })
+    });
+  } catch (err) { /* still open the email even if saving the address failed */ }
+
+  openSignatureEmail(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date, email);
   renderRoomSelect();
 }
 
