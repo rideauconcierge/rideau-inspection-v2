@@ -146,6 +146,7 @@
   .sp-btn{flex:1;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;}
   .sp-later{background:var(--navy);border:1px solid var(--border);color:var(--text-muted);}
   .sp-now{background:linear-gradient(135deg,var(--gold),#a67f34);border:none;color:var(--navy-deep);}
+  .sp-in-person{background:rgba(92,156,124,0.16);border:1px solid var(--ok);color:var(--ok);}
 
   #email-prompt-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.8);z-index:210;
     display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -779,11 +780,12 @@ function showSendPrompt(submissionId, roomLabel, modeLabel, unit, date){
   overlay.innerHTML = `
     <div class="send-prompt-card">
       <div class="sp-icon">✍️</div>
-      <div class="sp-title">Send for Signature?</div>
-      <div class="sp-desc">The resident can sign this report digitally — no hardcopy needed.</div>
-      <div class="sp-actions">
-        <button class="sp-btn sp-later" onclick="closeSendPrompt()">Later</button>
-        <button class="sp-btn sp-now" onclick="sendNowFromPrompt()">Send Now</button>
+      <div class="sp-title">Get Signature Now?</div>
+      <div class="sp-desc">Have the resident sign in person on this device, or send them a link to sign later.</div>
+      <div class="sp-actions" style="flex-direction:column;">
+        <button class="sp-btn sp-in-person" style="width:100%;" onclick="signInPersonFromPrompt()">✍ Sign In Person</button>
+        <button class="sp-btn sp-now" style="width:100%;margin-top:8px;" onclick="sendNowFromPrompt()">📧 Send by Email</button>
+        <button class="sp-btn sp-later" style="width:100%;margin-top:8px;" onclick="closeSendPrompt()">Later</button>
       </div>
     </div>
   `;
@@ -793,6 +795,12 @@ function showSendPrompt(submissionId, roomLabel, modeLabel, unit, date){
   overlay.dataset.unit = unit;
   overlay.dataset.date = date;
   document.body.appendChild(overlay);
+}
+function signInPersonFromPrompt(){
+  const el = document.getElementById('send-prompt-overlay');
+  const submissionId = el.dataset.submissionId;
+  el.remove();
+  window.location.href = buildSignLink(submissionId);
 }
 function closeSendPrompt(){
   const el = document.getElementById('send-prompt-overlay');
