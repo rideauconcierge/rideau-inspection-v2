@@ -126,6 +126,9 @@
     background:rgba(201,160,74,0.12);color:var(--gold-bright);font-size:11.5px;font-weight:700;
     cursor:pointer;font-family:'Inter',sans-serif;}
   .card-send-btn:hover{background:rgba(201,160,74,0.22);}
+  .card-sig-actions{display:flex;gap:8px;margin-top:10px;}
+  .card-sig-actions .card-send-btn{margin-top:0;flex:1;}
+  .card-in-person-btn{border-color:var(--ok);background:rgba(92,156,124,0.14);color:var(--ok);}
   .card-sig-preview{margin-top:10px;background:var(--navy);border:1px solid var(--border);border-radius:7px;
     padding:8px 10px;text-align:center;}
   .card-sig-preview img{max-height:36px;max-width:100%;display:block;margin:0 auto;}
@@ -475,6 +478,10 @@ function buildSignLink(submissionId){
   return base + 'sign.html?id=' + encodeURIComponent(submissionId);
 }
 
+function signInPersonFromCard(submissionId){
+  window.location.href = buildSignLink(submissionId);
+}
+
 async function sendSignatureRequest(submissionId, roomLabel, modeLabel, unit, date, email, isReminder){
   try {
     await fetch(WEB_APP_URL, {
@@ -610,10 +617,13 @@ function renderCards(){
         <span class="flag-badge ${isSigned?'flag-signed':'flag-pending'}">${isSigned?'✓ Signed':'Unsigned'}</span>
       </div>
       ${signaturePreviewHtml}
-      ${!isSigned ? (r.SignatureRequestedAt
-        ? `<button class="card-send-btn card-reminder-btn" onclick="event.stopPropagation(); openReminderChoice('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','${(r.ResidentEmail||'').replace(/'/g,"\\'")}')">🔔 Send Reminder</button>`
-        : `<button class="card-send-btn" onclick="event.stopPropagation(); openEmailPrompt('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','', false)">✍ Send for Signature</button>`
-      ) : ''}
+      ${!isSigned ? `<div class="card-sig-actions">
+        <button class="card-send-btn card-in-person-btn" onclick="event.stopPropagation(); signInPersonFromCard('${r.SubmissionID}')">✍ In Person</button>
+        ${r.SignatureRequestedAt
+          ? `<button class="card-send-btn card-reminder-btn" onclick="event.stopPropagation(); openReminderChoice('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','${(r.ResidentEmail||'').replace(/'/g,"\\'")}')">🔔 Reminder</button>`
+          : `<button class="card-send-btn" onclick="event.stopPropagation(); openEmailPrompt('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','', false)">📧 Email</button>`
+        }
+      </div>` : ''}
     </div>`;
   }).join('');
 }
@@ -735,10 +745,13 @@ function renderDetailView(overlay, record){
     : `<div class="sig-status-card sig-pending">
          <div class="sig-status-title">Awaiting Signature</div>
          ${record.ResidentEmail ? `<div class="sig-status-meta">Sent to ${record.ResidentEmail}</div>` : ''}
-         <button class="edit-btn" style="margin-top:10px;width:100%;" onclick="${record.SignatureRequestedAt
-           ? `openReminderChoice('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','${(record.ResidentEmail||'').replace(/'/g,"\\'")}')`
-           : `openEmailPrompt('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','', false)`
-         }">${record.SignatureRequestedAt ? '🔔 Send Reminder' : '✍ Send for Signature'}</button>
+         <div class="card-sig-actions" style="margin-top:10px;">
+           <button class="edit-btn card-in-person-btn" onclick="signInPersonFromCard('${record.SubmissionID}')">✍ In Person</button>
+           <button class="edit-btn" onclick="${record.SignatureRequestedAt
+             ? `openReminderChoice('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','${(record.ResidentEmail||'').replace(/'/g,"\\'")}')`
+             : `openEmailPrompt('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','', false)`
+           }">${record.SignatureRequestedAt ? '🔔 Reminder' : '📧 Email'}</button>
+         </div>
        </div>`;
 
   overlay.innerHTML = `
