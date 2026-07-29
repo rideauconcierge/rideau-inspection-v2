@@ -483,27 +483,22 @@ function signInPersonFromCard(submissionId){
 }
 
 async function sendSignatureRequest(submissionId, roomLabel, modeLabel, unit, date, email, isReminder){
+  toast('Sending...');
   try {
-    await fetch(WEB_APP_URL, {
+    const res = await fetch(WEB_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'requestSignature', submissionId, residentEmail: email })
     });
-  } catch (err) { /* still open the email even if saving the address failed */ }
-
-  const link = buildSignLink(submissionId);
-  const subject = (isReminder ? 'Reminder: ' : '') + `Signature Required - ${roomLabel} - ${date}`;
-  const intro = isReminder
-    ? `Hello,\r\n\r\nThis is a friendly reminder that we haven't yet received your signature for the amenity inspection report below:\r\n\r\n`
-    : `Hello,\r\n\r\nPlease review and sign the amenity inspection report below:\r\n\r\n`;
-  const body = intro
-    + `Room: ${roomLabel}\r\nUnit: ${unit}\r\nType: ${modeLabel}\r\n\r\n`
-    + `Sign here:\r\n${link}\r\n\r\n`
-    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\r\n\r\n`
-    + `Thank you,\r\nThe Rideau Concierge`;
-  window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-  toast(isReminder ? 'Reminder sent' : 'Signature request sent');
+    const result = await res.json();
+    if (result.success){
+      toast((isReminder ? 'Reminder sent to ' : 'Signature request sent to ') + email);
+    } else {
+      toast('Error: ' + (result.error || 'send failed'));
+    }
+  } catch (err) {
+    toast('Network error - could not send the email');
+  }
   setTimeout(fetchData, 800); // refresh so the card switches to "Send Reminder" state
 }
 
