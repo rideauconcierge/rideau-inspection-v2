@@ -114,6 +114,12 @@
   .mode-badge{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:10px;font-weight:700;}
   .mode-badge.pre{background:rgba(201,160,74,0.18);color:var(--gold-bright);}
   .mode-badge.post{background:rgba(92,142,163,0.2);color:#8bb8cf;}
+  .card-delete-icon{width:24px;height:24px;border-radius:50%;border:1px solid var(--warn);
+    background:rgba(201,106,82,0.14);color:var(--warn);font-size:11px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;}
+  .card-delete-icon:hover{background:rgba(201,106,82,0.3);}
+  .card-delete-btn-inline{border-color:var(--warn) !important;background:rgba(201,106,82,0.12) !important;color:var(--warn) !important;}
+  .card-delete-btn-inline:hover{background:rgba(201,106,82,0.22) !important;}
   .rcard-meta{font-size:12px;color:var(--text-muted);line-height:1.7;}
   .rcard-meta b{color:var(--text);font-weight:500;}
   .rcard-flags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;}
@@ -137,6 +143,11 @@
   .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
   .empty-state .es-icon{font-size:32px;margin-bottom:10px;}
 
+  .loading-state{text-align:center;padding:60px 20px;color:var(--text-muted);font-size:13px;}
+  .spinner{width:34px;height:34px;border:3px solid rgba(201,160,74,0.2);border-top-color:var(--gold);
+    border-radius:50%;margin:0 auto 14px;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
   /* detail modal */
   #detail-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.75);z-index:160;
     display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;}
@@ -155,6 +166,10 @@
   .ep-btn:disabled{opacity:0.4;cursor:not-allowed;}
   .ep-cancel{background:var(--navy);border:1px solid var(--border);color:var(--text-muted);}
   .ep-send{background:linear-gradient(135deg,var(--gold),#a67f34);border:none;color:var(--navy-deep);}
+  .ep-delete-confirm{background:var(--warn);border:none;color:#1a0a05;}
+  .delete-btn{width:100%;margin-top:18px;padding:11px;border-radius:8px;border:1px solid var(--warn);
+    background:rgba(201,106,82,0.12);color:var(--warn);font-weight:700;font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .delete-btn:hover{background:rgba(201,106,82,0.22);}
   .detail-panel{background:var(--navy-deep);border:1px solid var(--border);border-radius:14px;
     max-width:640px;width:100%;padding:26px 24px 30px;position:relative;}
   .detail-close{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--text-muted);
@@ -385,12 +400,23 @@ tickClock();
 let allData = [];
 let activeTab = 'all';       // all | room | month | date | unit
 let filters = { room:'', month:'', date:'', unit:'' };
+let isInitialLoad = true;
 
 async function initDashboard(){
   buildTabs();
   buildFilterPanel();
+  showLoadingState();
   await fetchData();
   setInterval(fetchData, 45000); // silent background refresh
+}
+
+function showLoadingState(){
+  document.getElementById('result-meta').innerHTML = 'Loading reports...';
+  document.getElementById('card-grid').innerHTML = `
+    <div class="loading-state" style="grid-column:1/-1;">
+      <div class="spinner"></div>
+      <div>Loading reports...</div>
+    </div>`;
 }
 
 async function fetchData(){
@@ -404,6 +430,15 @@ async function fetchData(){
   } catch(err){
     // silent fail on background refresh - don't disrupt the view
     console.warn('Refresh failed', err);
+    if (isInitialLoad){
+      document.getElementById('result-meta').textContent = '';
+      document.getElementById('card-grid').innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div class="es-icon">⚠</div>Couldn't load reports. Check your connection and try again.
+        </div>`;
+    }
+  } finally {
+    isInitialLoad = false;
   }
 }
 
@@ -569,7 +604,10 @@ function renderCards(){
     return `<div class="rcard ${r.Mode==='post'?'post-mode':''}" onclick="openDetailById('${r.SubmissionID}')">
       <div class="rcard-top">
         <div class="rcard-room">${ROOM_LABELS[r.Room] || r.Room}</div>
-        <span class="mode-badge ${r.Mode}">${r.Mode}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mode-badge ${r.Mode}">${r.Mode}</span>
+          ${isMaster ? `<button class="card-delete-icon" onclick="event.stopPropagation(); confirmDeleteReport('${r.SubmissionID}','${roomLabel}')" title="Delete report">🗑</button>` : ''}
+        </div>
       </div>
       <div class="rcard-meta">
         <b>Unit</b> ${r.Unit || '—'}<br>
@@ -631,6 +669,44 @@ function closeDetail(){
   if (el) el.remove();
   editMode = false;
   editSourceRecord = null;
+}
+
+function confirmDeleteReport(submissionId, roomLabel){
+  const overlay = document.createElement('div');
+  overlay.id = 'delete-confirm-overlay';
+  overlay.innerHTML = `
+    <div class="email-prompt-card">
+      <div class="ep-title" style="color:var(--warn);">Delete This Report?</div>
+      <div class="ep-desc">This permanently deletes the ${roomLabel} report, including any attached photos or signature. This cannot be undone.</div>
+      <div class="ep-actions">
+        <button class="ep-btn ep-cancel" onclick="document.getElementById('delete-confirm-overlay').remove()">Cancel</button>
+        <button class="ep-btn ep-delete-confirm" onclick="executeDeleteReport('${submissionId}')">Delete</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+async function executeDeleteReport(submissionId){
+  const overlay = document.getElementById('delete-confirm-overlay');
+  if (overlay) overlay.remove();
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'delete', submissionId, masterPassword: PASSWORD_MASTER })
+    });
+    const result = await res.json();
+    if (result.success){
+      toast('Report deleted');
+      closeDetail();
+      fetchData();
+    } else {
+      toast('Error: ' + (result.error || 'delete failed'));
+    }
+  } catch (err) {
+    toast('Network error - could not delete');
+  }
 }
 
 function switchDetailMode(mode){
@@ -730,6 +806,7 @@ function renderDetailView(overlay, record){
 
       <div class="action-row">
         <button class="edit-btn" onclick="enterEditMode()">✎ Edit Report</button>
+        ${isMaster ? `<button class="edit-btn card-delete-btn-inline" onclick="confirmDeleteReport('${record.SubmissionID}','${roomLabelDetail}')">🗑 Delete</button>` : ''}
       </div>
 
       ${signatureHtml}
