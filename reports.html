@@ -285,7 +285,10 @@
       <div class="eyebrow">The Rideau &nbsp;·&nbsp; 1035 Bank Street</div>
       <h1>Inspection Reports</h1>
       <div id="master-banner" class="master-banner hidden">🔑 MASTER REPORT</div>
-      <div style="margin-top:10px;"><a href="index.html" style="color:var(--gold);font-size:11.5px;text-decoration:none;border:1px solid var(--border);padding:5px 14px;border-radius:14px;">&larr; New Inspection</a></div>
+      <div style="margin-top:10px;">
+        <a href="index.html" style="color:var(--gold);font-size:11.5px;text-decoration:none;border:1px solid var(--border);padding:5px 14px;border-radius:14px;">&larr; New Inspection</a>
+        <button onclick="logout()" style="color:var(--text-muted);font-size:11.5px;background:none;border:1px solid var(--border);padding:5px 14px;border-radius:14px;cursor:pointer;font-family:'Inter',sans-serif;margin-left:6px;">Logout</button>
+      </div>
     </div>
     <div class="clock">
       <div><span class="refresh-dot"></span>Live</div>
@@ -340,12 +343,45 @@ function positionContentBelowLogo(){
   const rect = logo.getBoundingClientRect();
   content.style.top = (rect.bottom + 22) + 'px';
 }
-startGate();
+
+function resumeExistingSession(){
+  let saved;
+  try { saved = sessionStorage.getItem('rideauAuth'); } catch (err) { return false; }
+  if (!saved) return false;
+  try {
+    const data = JSON.parse(saved);
+    isMaster = !!data.master;
+  } catch (err) { return false; }
+
+  // Skip the whole intro/gate - land straight on the dashboard, logo
+  // already docked with no animation.
+  const logo = document.getElementById('siteLogo');
+  logo.style.transition = 'none';
+  logo.classList.add('visible', 'docked');
+  logo.style.position = 'absolute';
+  logo.style.top = '22px';
+  document.getElementById('gateBackdrop').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
+  initDashboard();
+  return true;
+}
+
+function logout(){
+  try { sessionStorage.removeItem('rideauAuth'); } catch (err) {}
+  window.location.reload();
+}
+
+if (!resumeExistingSession()) {
+  startGate();
+}
 
 function tryLogin(){
   const val = document.getElementById('pw-input').value;
   if (val === PASSWORD_MASTER || val === PASSWORD_REGULAR){
     isMaster = (val === PASSWORD_MASTER);
+    try { sessionStorage.setItem('rideauAuth', JSON.stringify({ master: isMaster })); } catch (err) {}
     const backdrop = document.getElementById('gateBackdrop');
     const gate = document.getElementById('login-screen');
     const logo = document.getElementById('siteLogo');
