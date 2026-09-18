@@ -444,6 +444,10 @@ function renderForm(){
   `;
 
   r.groups.forEach((grp, gi) => {
+    // Post-Inspection only checks for damage, security, and item returns -
+    // no restocking or cleaning tasks, so skip those groups entirely.
+    if (state.mode === 'post' && (grp.kind === 'supply' || grp.kind === 'task')) return;
+
     html += `<div class="group">
       <div class="group-head">
         <span class="group-icon">${grp.icon}</span>
@@ -683,7 +687,9 @@ function fileToBase64(file){
 // =========================================================
 function collectChecklist(){
   const r = ROOMS[state.room];
+  const isPost = state.mode === 'post';
   return r.groups.map((grp, gi) => {
+    if (isPost && (grp.kind === 'supply' || grp.kind === 'task')) return null; // not checked post-inspection
     const items = grp.items.map((raw, ii) => {
       const item = typeof raw === 'string' ? { name: raw } : raw;
       const el = document.querySelector(`[data-grp="${gi}"][data-item="${ii}"]`);
@@ -721,7 +727,7 @@ function collectChecklist(){
       return rec;
     });
     return { title: grp.title, kind: grp.kind, items };
-  });
+  }).filter(g => g !== null);
 }
 
 async function submitInspection(){
