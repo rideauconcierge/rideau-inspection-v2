@@ -351,21 +351,15 @@ function resumeExistingSession(){
   try {
     const data = JSON.parse(saved);
     isMaster = !!data.master;
-  } catch (err) { return false; }
-
-  // Skip the whole intro/gate - land straight on the dashboard, logo
-  // already docked with no animation.
-  const logo = document.getElementById('siteLogo');
-  logo.style.transition = 'none';
-  logo.classList.add('visible', 'docked');
-  logo.style.position = 'absolute';
-  logo.style.top = '22px';
-  document.getElementById('gateBackdrop').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('main-app').classList.remove('hidden');
-  document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
-  initDashboard();
-  return true;
+    unlockDashboard(false);
+    return true;
+  } catch (err) {
+    // Anything went wrong restoring the session - don't leave a broken
+    // blank dashboard. Clear the bad flag and fall back to a normal login.
+    try { sessionStorage.removeItem('rideauAuth'); } catch (e) {}
+    console.warn('Could not resume session', err);
+    return false;
+  }
 }
 
 function logout(){
@@ -377,32 +371,41 @@ if (!resumeExistingSession()) {
   startGate();
 }
 
+function unlockDashboard(animated){
+  const backdrop = document.getElementById('gateBackdrop');
+  const gate = document.getElementById('login-screen');
+  const logo = document.getElementById('siteLogo');
+
+  if (!animated){
+    logo.style.transition = 'none';
+    logo.classList.add('visible');
+  }
+  logo.classList.add('docked');
+  backdrop.style.opacity = '0';
+  gate.style.transition = animated ? 'opacity 0.35s ease' : 'none';
+  gate.style.opacity = '0';
+
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
+  initDashboard();
+
+  const finishHiding = () => {
+    backdrop.style.display = 'none';
+    gate.style.display = 'none';
+    // Unpin from the viewport so it scrolls away naturally with the header.
+    logo.style.position = 'absolute';
+    logo.style.top = '22px';
+  };
+  if (animated) setTimeout(finishHiding, 1250); // matches the 1.2s dock transition
+  else finishHiding();
+}
+
 function tryLogin(){
   const val = document.getElementById('pw-input').value;
   if (val === PASSWORD_MASTER || val === PASSWORD_REGULAR){
     isMaster = (val === PASSWORD_MASTER);
     try { sessionStorage.setItem('rideauAuth', JSON.stringify({ master: isMaster })); } catch (err) {}
-    const backdrop = document.getElementById('gateBackdrop');
-    const gate = document.getElementById('login-screen');
-    const logo = document.getElementById('siteLogo');
-
-    logo.classList.add('docked');           // shrink + float up into the header spot, right now
-    backdrop.style.opacity = '0';
-    gate.style.transition = 'opacity 0.35s ease';
-    gate.style.opacity = '0';
-
-    document.getElementById('main-app').classList.remove('hidden');
-    document.getElementById('master-banner').classList.toggle('hidden', !isMaster);
-    initDashboard();
-
-    setTimeout(() => {
-      backdrop.style.display = 'none';
-      gate.style.display = 'none';
-      // Unpin from the viewport (no scroll has happened yet, login screen
-      // doesn't scroll) so it scrolls away naturally with the dashboard header.
-      logo.style.position = 'absolute';
-      logo.style.top = '22px';
-    }, 1250);                               // matches the 1.2s dock transition duration
+    unlockDashboard(true);
   } else {
     const input = document.getElementById('pw-input');
     input.classList.add('error');
