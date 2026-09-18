@@ -382,22 +382,6 @@ function logout(){
   window.location.reload();
 }
 
-if (!resumeExistingSession()) {
-  startGate();
-}
-
-// Safety net: if we resumed a session but the dashboard content never
-// actually rendered (for any reason), don't leave it stuck blank -
-// clear the session and reload to a clean login instead.
-setTimeout(function(){
-  const mainApp = document.getElementById('main-app');
-  const tabRow = document.getElementById('tab-row');
-  if (mainApp && !mainApp.classList.contains('hidden') && tabRow && !tabRow.innerHTML.trim()){
-    try { sessionStorage.removeItem('rideauAuth'); } catch (e) {}
-    window.location.reload();
-  }
-}, 3000);
-
 function unlockDashboard(animated){
   const backdrop = document.getElementById('gateBackdrop');
   const gate = document.getElementById('login-screen');
@@ -1159,6 +1143,27 @@ async function saveEdit(){
     btn.textContent = 'Save Changes';
   }
 }
+
+// This must stay the LAST thing in the script - it can trigger code paths
+// (resumeExistingSession -> unlockDashboard -> initDashboard -> buildTabs
+// etc.) that read state declared with let/const further up the file. If
+// this ran any earlier than those declarations, it would hit exactly the
+// "Cannot access before initialization" error this fixes.
+if (!resumeExistingSession()) {
+  startGate();
+}
+
+// Safety net: if we resumed a session but the dashboard content never
+// actually rendered (for any reason), don't leave it stuck blank -
+// clear the session and reload to a clean login instead.
+setTimeout(function(){
+  const mainApp = document.getElementById('main-app');
+  const tabRow = document.getElementById('tab-row');
+  if (mainApp && !mainApp.classList.contains('hidden') && tabRow && !tabRow.innerHTML.trim()){
+    try { sessionStorage.removeItem('rideauAuth'); } catch (e) {}
+    window.location.reload();
+  }
+}, 3000);
 </script>
 </body>
 </html>
