@@ -307,6 +307,21 @@
 <div class="toast" id="toast"></div>
 
 <script>
+window.addEventListener('error', function(e){
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c96a52;color:#1a0a05;'
+    + 'padding:12px 16px;font-family:monospace;font-size:12px;z-index:99999;word-break:break-word;';
+  banner.textContent = 'JS Error: ' + e.message + ' (line ' + e.lineno + ', col ' + e.colno + ')';
+  document.body.appendChild(banner);
+});
+window.addEventListener('unhandledrejection', function(e){
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c96a52;color:#1a0a05;'
+    + 'padding:12px 16px;font-family:monospace;font-size:12px;z-index:99999;word-break:break-word;';
+  banner.textContent = 'Async Error: ' + (e.reason && e.reason.message ? e.reason.message : e.reason);
+  document.body.appendChild(banner);
+});
+
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz-69e-XALVtmU1bJ2WpPpUbs39KVniUmsxNzDkxlH8LxErxg7qEWlytviprtTAJvL6xQ/exec";
 const PASSWORD_REGULAR = "12345";
 const PASSWORD_MASTER = "S12345";
@@ -370,6 +385,18 @@ function logout(){
 if (!resumeExistingSession()) {
   startGate();
 }
+
+// Safety net: if we resumed a session but the dashboard content never
+// actually rendered (for any reason), don't leave it stuck blank -
+// clear the session and reload to a clean login instead.
+setTimeout(function(){
+  const mainApp = document.getElementById('main-app');
+  const tabRow = document.getElementById('tab-row');
+  if (mainApp && !mainApp.classList.contains('hidden') && tabRow && !tabRow.innerHTML.trim()){
+    try { sessionStorage.removeItem('rideauAuth'); } catch (e) {}
+    window.location.reload();
+  }
+}, 3000);
 
 function unlockDashboard(animated){
   const backdrop = document.getElementById('gateBackdrop');
