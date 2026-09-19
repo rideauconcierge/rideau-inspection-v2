@@ -125,8 +125,9 @@ const ROOM_LABELS = {
 
 const params = new URLSearchParams(window.location.search);
 const SUBMISSION_ID = params.get('id');
+const SUBMISSION_IDS = params.get('ids'); // comma-separated, for a bundled sign link
 const app = document.getElementById('app');
-let record = null;
+let records = [];
 let sigMode = 'draw';
 let hasSignature = false;
 
@@ -138,20 +139,24 @@ function toast(msg){
 }
 
 async function init(){
-  if (!SUBMISSION_ID){
+  const isBundle = !!SUBMISSION_IDS;
+  if (!SUBMISSION_ID && !SUBMISSION_IDS){
     app.innerHTML = `<div class="state-msg"><div class="sm-icon">⚠</div>No report was specified. Please use the link from your email.</div>`;
     document.getElementById('pageSub').textContent = '';
     return;
   }
   try {
-    const res = await fetch(`${WEB_APP_URL}?submissionId=${encodeURIComponent(SUBMISSION_ID)}`);
+    const url = isBundle
+      ? `${WEB_APP_URL}?submissionIds=${encodeURIComponent(SUBMISSION_IDS)}`
+      : `${WEB_APP_URL}?submissionId=${encodeURIComponent(SUBMISSION_ID)}`;
+    const res = await fetch(url);
     const json = await res.json();
     if (!json.success || !json.data.length){
       app.innerHTML = `<div class="state-msg"><div class="sm-icon">⚠</div>This report could not be found. Please check the link or contact the concierge.</div>`;
       document.getElementById('pageSub').textContent = '';
       return;
     }
-    record = json.data[0];
+    records = json.data;
     render();
   } catch (err) {
     app.innerHTML = `<div class="state-msg"><div class="sm-icon">⚠</div>Couldn't load the report. Check your connection and reload the page.</div>`;
@@ -198,38 +203,47 @@ function renderChecklistFull(record){
 }
 
 function render(){
-  const modeLabel = record.Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
-  document.getElementById('pageSub').textContent = `${ROOM_LABELS[record.Room] || record.Room} — ${modeLabel}`;
+  const isBundle = records.length > 1;
+  const modeLabel = records[0].Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
+  document.getElementById('pageSub').textContent = isBundle
+    ? `${records.length} Bookings — ${modeLabel}`
+    : `${ROOM_LABELS[records[0].Room] || records[0].Room} — ${modeLabel}`;
 
-  if (record.SignatureStatus === 'Signed'){
+  const allSigned = records.every(r => r.SignatureStatus === 'Signed');
+  if (allSigned){
     renderAlreadySigned();
     return;
   }
 
-  const checklistHtml = renderChecklistFull(record);
-
-  const photosHtml = (record.PhotoURLs||[]).length
-    ? `<div class="dphotos">${record.PhotoURLs.map(u=>`<a href="${u}" target="_blank"><img src="${u}"></a>`).join('')}</div>`
-    : '';
+  const reportsHtml = records.map((record, idx) => {
+    const checklistHtml = renderChecklistFull(record);
+    const photosHtml = (record.PhotoURLs||[]).length
+      ? `<div class="dphotos">${record.PhotoURLs.map(u=>`<a href="${u}" target="_blank"><img src="${u}"></a>`).join('')}</div>`
+      : '';
+    return `
+      <div class="card" style="${isBundle ? 'border-color:var(--gold);' : ''}">
+        <div class="card-title">${isBundle ? `Booking ${idx+1} of ${records.length} — ` : ''}${ROOM_LABELS[record.Room] || record.Room}</div>
+        <div class="meta-row"><b>Room</b><span>${ROOM_LABELS[record.Room] || record.Room}</span></div>
+        <div class="meta-row"><b>Unit</b><span>${record.Unit || '—'}</span></div>
+        <div class="meta-row"><b>Date</b><span>${record.Date || '—'}</span></div>
+        <div class="meta-row"><b>Concierge</b><span>${record.Concierge || '—'}</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Full Inspection Report</div>
+        ${checklistHtml}
+        ${record.Comments ? `<div class="dgroup-title" style="margin-top:14px;">Comments</div><div class="dcomments">${record.Comments}</div>` : ''}
+        ${photosHtml ? `<div class="dgroup-title" style="margin-top:14px;">Photos</div>${photosHtml}` : ''}
+      </div>
+      ${idx < records.length-1 ? `<div style="height:2px;background:var(--gold);opacity:0.25;margin:18px 0;border-radius:2px;"></div>` : ''}
+    `;
+  }).join('');
 
   app.innerHTML = `
-    <div class="card">
-      <div class="card-title">Report Summary</div>
-      <div class="meta-row"><b>Room</b><span>${ROOM_LABELS[record.Room] || record.Room}</span></div>
-      <div class="meta-row"><b>Unit</b><span>${record.Unit || '—'}</span></div>
-      <div class="meta-row"><b>Date</b><span>${record.Date || '—'}</span></div>
-      <div class="meta-row"><b>Concierge</b><span>${record.Concierge || '—'}</span></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Full Inspection Report</div>
-      ${checklistHtml}
-      ${record.Comments ? `<div class="dgroup-title" style="margin-top:14px;">Comments</div><div class="dcomments">${record.Comments}</div>` : ''}
-      ${photosHtml ? `<div class="dgroup-title" style="margin-top:14px;">Photos</div>${photosHtml}` : ''}
-    </div>
+    ${reportsHtml}
 
     <div class="card">
       <div class="card-title">Your Signature</div>
+      ${isBundle ? `<div style="color:var(--text-muted);font-size:12.5px;margin-bottom:14px;line-height:1.5;">This single signature will apply to all ${records.length} bookings above.</div>` : ''}
       <div class="field">
         <label>Full Name</label>
         <input type="text" id="signerName" placeholder="Your full name" oninput="updateTypedPreview()">
@@ -251,7 +265,7 @@ function render(){
 
       <label class="confirm-check">
         <input type="checkbox" id="confirmCheck">
-        I confirm this report accurately reflects the condition of the room.
+        I confirm ${isBundle ? 'these reports accurately reflect' : 'this report accurately reflects'} the condition of the room${isBundle?'s':''}.
       </label>
 
       <button class="submit-btn" id="submitBtn" onclick="submitSignature()">Sign &amp; Submit</button>
@@ -262,16 +276,22 @@ function render(){
 }
 
 function renderAlreadySigned(){
-  const signedDate = record.SignedAt ? new Date(record.SignedAt).toLocaleString('en-CA', {dateStyle:'medium', timeStyle:'short'}) : '';
-  const sigHtml = record.SignatureType === 'drawn' && record.SignatureImageURL
-    ? `<img class="signed-sig-img" src="${record.SignatureImageURL}">`
-    : `<div class="signed-sig-typed">${record.SignerName || ''}</div>`;
+  const first = records[0];
+  const isBundle = records.length > 1;
+  const signedDate = first.SignedAt ? new Date(first.SignedAt).toLocaleString('en-CA', {dateStyle:'medium', timeStyle:'short'}) : '';
+  const sigHtml = first.SignatureType === 'drawn' && first.SignatureImageURL
+    ? `<img class="signed-sig-img" src="${first.SignatureImageURL}">`
+    : `<div class="signed-sig-typed">${first.SignerName || ''}</div>`;
+  const roomListHtml = isBundle
+    ? `<div class="signed-meta" style="margin-top:6px;">Covering: ${records.map(r => ROOM_LABELS[r.Room] || r.Room).join(', ')}</div>`
+    : '';
 
   app.innerHTML = `
     <div class="card signed-panel">
       <div class="signed-icon">✓</div>
       <div class="signed-title">Already Signed</div>
-      <div class="signed-meta">Signed by <b>${record.SignerName || 'resident'}</b>${signedDate ? ` on ${signedDate}` : ''}</div>
+      <div class="signed-meta">Signed by <b>${first.SignerName || 'resident'}</b>${signedDate ? ` on ${signedDate}` : ''}</div>
+      ${roomListHtml}
       ${sigHtml}
     </div>
     <div style="text-align:center;margin-top:6px;">
@@ -356,7 +376,7 @@ async function submitSignature(){
 
   const payload = {
     action: 'sign',
-    submissionId: SUBMISSION_ID,
+    submissionIds: records.map(r => r.SubmissionID),
     signerName: name,
     signatureType: sigMode,
     signatureImage: sigMode === 'draw' ? canvas.toDataURL('image/png').split(',')[1] : ''
@@ -370,10 +390,12 @@ async function submitSignature(){
     });
     const result = await res.json();
     if (result.success){
-      record.SignatureStatus = 'Signed';
-      record.SignerName = name;
-      record.SignatureType = sigMode;
-      record.SignedAt = new Date().toISOString();
+      records.forEach(r => {
+        r.SignatureStatus = 'Signed';
+        r.SignerName = name;
+        r.SignatureType = sigMode;
+        r.SignedAt = new Date().toISOString();
+      });
       renderAlreadySigned();
       toast('Signature submitted — thank you');
     } else {
