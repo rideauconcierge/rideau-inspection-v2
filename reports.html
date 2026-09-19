@@ -572,48 +572,120 @@ function countIssues(checklist){
 }
 
 // =========================================================
-// SEND FOR SIGNATURE / REMINDERS
+// SEND FOR SIGNATURE / REMINDERS (single or bundled)
 // =========================================================
-function buildSignLink(submissionId){
+function buildSignLink(ids){
   const base = window.location.href.replace(/[^/]*$/, '');
-  return base + 'sign.html?id=' + encodeURIComponent(submissionId);
+  const idArray = Array.isArray(ids) ? ids : [ids];
+  return idArray.length > 1
+    ? base + 'sign.html?ids=' + idArray.map(encodeURIComponent).join(',')
+    : base + 'sign.html?id=' + encodeURIComponent(idArray[0]);
 }
 
-function signInPersonFromCard(submissionId){
-  window.location.href = buildSignLink(submissionId);
+// Other unsigned amenity bookings for the same unit/date/mode, excluding
+// Guest Suite and the report itself - candidates for bundling into one signature.
+function findSiblingReports(record){
+  return allData.filter(r =>
+    r.Unit === record.Unit &&
+    r.Date === record.Date &&
+    r.Mode === record.Mode &&
+    r.Room !== 'guest_suite' &&
+    r.SignatureStatus !== 'Signed' &&
+    r.SubmissionID !== record.SubmissionID
+  );
 }
 
-async function sendSignatureRequest(submissionId, roomLabel, modeLabel, unit, date, email, isReminder){
+// Entry point for every sign-related button. Checks for bundle-eligible
+// siblings first; if none, goes straight to the normal single-report flow.
+function initiateSign(submissionId, actionType, isReminder){
+  const record = allData.find(r => r.SubmissionID === submissionId);
+  if (!record){ toast('Report not found - try refreshing'); return; }
+  const siblings = findSiblingReports(record);
+
+  if (!siblings.length){
+    proceedSign([record], actionType, isReminder);
+    return;
+  }
+  showBundleChoice(record, siblings, actionType, isReminder);
+}
+
+let pendingBundleChoice = null;
+
+function showBundleChoice(record, siblings, actionType, isReminder){
+  const modeLabel = record.Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
+  const roomListHtml = siblings.map(s => `<li>${ROOM_LABELS[s.Room] || s.Room}</li>`).join('');
+  const overlay = document.createElement('div');
+  overlay.id = 'bundle-choice-overlay';
+  overlay.innerHTML = `
+    <div class="email-prompt-card">
+      <div class="ep-title">Multiple Bookings Found</div>
+      <div class="ep-desc">Unit ${record.Unit} has ${siblings.length} other unsigned ${modeLabel} booking${siblings.length>1?'s':''} for ${record.Date}:</div>
+      <ul style="font-size:12.5px;color:var(--text-muted);margin:6px 0 16px;padding-left:18px;">${roomListHtml}</ul>
+      <div class="ep-actions" style="flex-direction:column;">
+        <button class="ep-btn ep-send" style="width:100%;" onclick="resolveBundleChoice(true)">Sign All Together (${siblings.length+1})</button>
+        <button class="ep-btn ep-cancel" style="width:100%;margin-top:8px;" onclick="resolveBundleChoice(false)">Just This Room</button>
+      </div>
+    </div>
+  `;
+  pendingBundleChoice = { record, siblings, actionType, isReminder };
+  document.body.appendChild(overlay);
+}
+
+function resolveBundleChoice(bundle){
+  const el = document.getElementById('bundle-choice-overlay');
+  if (el) el.remove();
+  const { record, siblings, actionType, isReminder } = pendingBundleChoice;
+  pendingBundleChoice = null;
+  proceedSign(bundle ? [record, ...siblings] : [record], actionType, isReminder);
+}
+
+function proceedSign(records, actionType, isReminder){
+  if (actionType === 'inperson'){
+    window.location.href = buildSignLink(records.map(r => r.SubmissionID));
+  } else {
+    openEmailPrompt(records, '', isReminder);
+  }
+}
+
+async function sendSignatureRequest(records, email, isReminder){
+  const ids = records.map(r => r.SubmissionID);
   try {
     await fetch(WEB_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'requestSignature', submissionId })
+      body: JSON.stringify({ action: 'requestSignature', submissionIds: ids })
     });
   } catch (err) { /* still open the email draft even if marking the status failed */ }
 
-  const link = buildSignLink(submissionId);
-  const subject = (isReminder ? 'Reminder: ' : '') + `Signature Required - ${roomLabel} - ${date}`;
+  const isBundle = records.length > 1;
+  const link = buildSignLink(ids);
+  const modeLabel = records[0].Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
+  const roomList = records.map(r => ROOM_LABELS[r.Room] || r.Room).join(', ');
+  const subject = (isReminder ? 'Reminder: ' : '') + (isBundle
+    ? `Signature Required - ${records.length} Amenity Bookings - ${records[0].Date}`
+    : `Signature Required - ${ROOM_LABELS[records[0].Room] || records[0].Room} - ${records[0].Date}`);
   const intro = isReminder
-    ? `Hello,\r\n\r\nThis is a friendly reminder that we haven't yet received your signature for the amenity inspection report below:\r\n\r\n`
-    : `Hello,\r\n\r\nPlease review and sign the amenity inspection report below:\r\n\r\n`;
+    ? `Hello,\r\n\r\nThis is a friendly reminder that we haven't yet received your signature for the following amenity inspection report${isBundle?'s':''}:\r\n\r\n`
+    : `Hello,\r\n\r\nPlease review and sign the following amenity inspection report${isBundle?'s':''}:\r\n\r\n`;
   const body = intro
-    + `Room: ${roomLabel}\r\nUnit: ${unit}\r\nType: ${modeLabel}\r\n\r\n`
+    + `Unit: ${records[0].Unit}\r\nDate: ${records[0].Date}\r\nType: ${modeLabel}\r\n`
+    + `Room${isBundle?'s':''}: ${roomList}\r\n\r\n`
     + `Sign here:\r\n${link}\r\n\r\n`
-    + `This confirms the condition of the room for your booking. If you have any questions, please contact the concierge.\r\n\r\n`
+    + `This confirms the condition of the room${isBundle?'s':''} for your booking. If you have any questions, please contact the concierge.\r\n\r\n`
     + `Thank you,\r\nThe Rideau Concierge`;
   window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-  setTimeout(fetchData, 800); // refresh so the card switches to "Send Reminder" state
+  setTimeout(fetchData, 800); // refresh so the card(s) switch to "Send Reminder" state
 }
 
-function openEmailPrompt(submissionId, roomLabel, modeLabel, unit, date, existingEmail, isReminder){
+function openEmailPrompt(records, existingEmail, isReminder){
+  const isBundle = records.length > 1;
   const overlay = document.createElement('div');
   overlay.id = 'email-prompt-overlay';
   overlay.innerHTML = `
     <div class="email-prompt-card">
       <div class="ep-title">${isReminder ? 'Send Reminder' : "Resident's Email"}</div>
-      <div class="ep-desc">Enter the email to send the ${isReminder ? 'reminder' : 'signature request'} to. This is never saved - it's used only to open your email draft.</div>
+      <div class="ep-desc">${isBundle ? `Sending for ${records.length} bookings together. ` : ''}Enter the email to send the ${isReminder ? 'reminder' : 'signature request'} to. This is never saved - it's used only to open your email draft.</div>
       <input type="email" id="ep-email-input" value="${existingEmail || ''}" placeholder="resident@example.com">
       <div class="ep-actions">
         <button class="ep-btn ep-cancel" onclick="closeEmailPrompt()">Cancel</button>
@@ -621,26 +693,26 @@ function openEmailPrompt(submissionId, roomLabel, modeLabel, unit, date, existin
       </div>
     </div>
   `;
-  overlay.dataset.submissionId = submissionId;
-  overlay.dataset.roomLabel = roomLabel;
-  overlay.dataset.modeLabel = modeLabel;
-  overlay.dataset.unit = unit;
-  overlay.dataset.date = date;
+  pendingEmailRecords = records;
   overlay.dataset.isReminder = isReminder ? '1' : '';
   document.body.appendChild(overlay);
   document.getElementById('ep-email-input').focus();
 }
+let pendingEmailRecords = null;
 function closeEmailPrompt(){
   const el = document.getElementById('email-prompt-overlay');
   if (el) el.remove();
+  pendingEmailRecords = null;
 }
 function confirmEmailPrompt(){
   const email = document.getElementById('ep-email-input').value.trim();
   if (!email){ toast('Please enter an email address'); return; }
   const el = document.getElementById('email-prompt-overlay');
-  const d = el.dataset;
+  const isReminder = el.dataset.isReminder === '1';
+  const records = pendingEmailRecords;
   el.remove();
-  sendSignatureRequest(d.submissionId, d.roomLabel, d.modeLabel, d.unit, d.date, email, d.isReminder === '1');
+  pendingEmailRecords = null;
+  sendSignatureRequest(records, email, isReminder);
 }
 
 function renderCards(){
@@ -687,10 +759,10 @@ function renderCards(){
       </div>
       ${signaturePreviewHtml}
       ${!isSigned ? `<div class="card-sig-actions">
-        <button class="card-send-btn card-in-person-btn" onclick="event.stopPropagation(); signInPersonFromCard('${r.SubmissionID}')">✍ In Person</button>
+        <button class="card-send-btn card-in-person-btn" onclick="event.stopPropagation(); initiateSign('${r.SubmissionID}', 'inperson')">✍ In Person</button>
         ${r.SignatureRequestedAt
-          ? `<button class="card-send-btn card-reminder-btn" onclick="event.stopPropagation(); openEmailPrompt('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','', true)">🔔 Reminder</button>`
-          : `<button class="card-send-btn" onclick="event.stopPropagation(); openEmailPrompt('${r.SubmissionID}','${roomLabel}','${modeLabel}','${r.Unit||''}','${r.Date||''}','', false)">📧 Email</button>`
+          ? `<button class="card-send-btn card-reminder-btn" onclick="event.stopPropagation(); initiateSign('${r.SubmissionID}', 'email', true)">🔔 Reminder</button>`
+          : `<button class="card-send-btn" onclick="event.stopPropagation(); initiateSign('${r.SubmissionID}', 'email', false)">📧 Email</button>`
         }
       </div>` : ''}
     </div>`;
@@ -853,8 +925,8 @@ function renderDetailView(overlay, record){
     : `<div class="sig-status-card sig-pending">
          <div class="sig-status-title">Awaiting Signature</div>
          <div class="card-sig-actions" style="margin-top:10px;">
-           <button class="edit-btn card-in-person-btn" onclick="signInPersonFromCard('${record.SubmissionID}')">✍ In Person</button>
-           <button class="edit-btn" onclick="openEmailPrompt('${record.SubmissionID}','${roomLabelDetail}','${modeLabelDetail}','${record.Unit||''}','${record.Date||''}','', ${record.SignatureRequestedAt ? 'true' : 'false'})">${record.SignatureRequestedAt ? '🔔 Reminder' : '📧 Email'}</button>
+           <button class="edit-btn card-in-person-btn" onclick="initiateSign('${record.SubmissionID}', 'inperson')">✍ In Person</button>
+           <button class="edit-btn" onclick="initiateSign('${record.SubmissionID}', 'email', ${record.SignatureRequestedAt ? 'true' : 'false'})">${record.SignatureRequestedAt ? '🔔 Reminder' : '📧 Email'}</button>
          </div>
        </div>`;
 
