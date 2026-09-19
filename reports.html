@@ -156,6 +156,8 @@
     display:flex;align-items:center;justify-content:center;padding:20px;}
   #delete-confirm-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.8);z-index:210;
     display:flex;align-items:center;justify-content:center;padding:20px;}
+  #bundle-choice-overlay{position:fixed;inset:0;background:rgba(6,13,20,0.8);z-index:210;
+    display:flex;align-items:center;justify-content:center;padding:20px;}
   .email-prompt-card{background:var(--navy-card);border:1px solid var(--border);border-radius:14px;
     padding:26px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
   .ep-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin-bottom:6px;}
@@ -612,6 +614,9 @@ function initiateSign(submissionId, actionType, isReminder){
 let pendingBundleChoice = null;
 
 function showBundleChoice(record, siblings, actionType, isReminder){
+  const existing = document.getElementById('bundle-choice-overlay');
+  if (existing) existing.remove();
+
   const modeLabel = record.Mode === 'pre' ? 'Pre-Inspection' : 'Post-Inspection';
   const roomListHtml = siblings.map(s => `<li>${ROOM_LABELS[s.Room] || s.Room}</li>`).join('');
   const overlay = document.createElement('div');
@@ -679,6 +684,9 @@ async function sendSignatureRequest(records, email, isReminder){
 }
 
 function openEmailPrompt(records, existingEmail, isReminder){
+  const existing = document.getElementById('email-prompt-overlay');
+  if (existing) existing.remove();
+
   const isBundle = records.length > 1;
   const overlay = document.createElement('div');
   overlay.id = 'email-prompt-overlay';
@@ -789,6 +797,9 @@ function openDetailById(submissionId){
 }
 
 function openDetail(record){
+  const existingOverlay = document.getElementById('detail-overlay');
+  if (existingOverlay) existingOverlay.remove();
+
   const pair = allData.filter(r => r.RecordKey === record.RecordKey);
   detailPair.pre = pair.find(r => r.Mode === 'pre') || null;
   detailPair.post = pair.find(r => r.Mode === 'post') || null;
@@ -811,6 +822,9 @@ function closeDetail(){
 }
 
 function confirmDeleteReport(submissionId, roomLabel){
+  const existing = document.getElementById('delete-confirm-overlay');
+  if (existing) existing.remove();
+
   const overlay = document.createElement('div');
   overlay.id = 'delete-confirm-overlay';
   overlay.innerHTML = `
